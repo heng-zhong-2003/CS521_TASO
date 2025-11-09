@@ -6,3 +6,6 @@ from patterns.operator_input import InputOperator
 class Graph:
     def __init__(self, inputs: list[InputOperator]) -> None:
         self.inputs: list[InputOperator] = inputs
+    
+    def get_inputs(self) -> list[InputOperator]:
+        return self.inputs

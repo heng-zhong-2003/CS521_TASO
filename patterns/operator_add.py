@@ -8,6 +8,8 @@ class AddOperator(Operator):
         self.lhs: Operator = lhs
         self.rhs: Operator = rhs
         self.users: list[Operator] = []
+        lhs.add_users([self])
+        rhs.add_users([self])
     
     def get_inputs(self) -> Iterable[Operator]:
         return [self.lhs, self.rhs]
