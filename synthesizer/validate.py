@@ -25,7 +25,6 @@ class RuleValidator():
             (2, 4, 4), dtype=np.float64)
 
     def eval_eq(self, lhs: Graph, rhs: Graph, inputs: list[npt.NDArray[np.float64]]) -> bool:
-        lhs_inputs: list[InputOperator] = lhs.get_inputs()
         lhs_rslt = evaluate.evaluate(lhs, inputs)  # type: ignore
         rhs_rslt = evaluate.evaluate(rhs, inputs)  # type: ignore
         lhs_rslt_vals = sorted(list(lhs_rslt.values()))
