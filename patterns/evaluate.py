@@ -48,6 +48,11 @@ def evaluate(comp_graph: Graph,
         operators_results_map[comp_graph.get_inputs()[i]] = inputs[i]
         visited.add(comp_graph.get_inputs()[i])
 
+    if len(comp_graph.get_inputs()) == len(comp_graph.operators):
+    # No other operators; graph outputs are just its inputs
+        return {inp: val for inp, val in zip(comp_graph.get_inputs(), inputs)}
+
+
     curr_depth = 0
     output_op_rslt_map: dict[Operator, npt.NDArray[np.int32 | np.float64]] = {}
 

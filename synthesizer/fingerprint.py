@@ -25,15 +25,21 @@ class Fingerprint:
         #   for container element types.
         # That is, t1 is subtype of t2 does not mean list[t1] is
         #   subtype of list[t2].
+        print("about to evaluate")
         rslts: dict[Operator, npt.NDArray[np.int32 | np.float64]] = \
             evaluate.evaluate(
                 comp_graph,
-                lf.inputs[0:len(comp_graph.get_inputs())])  # type: ignore
+                self.inputs[0:len(comp_graph.get_inputs())])  # type: ignore
+        print("initialized rslts to a dict of", len(rslts))
         rslts_list: list[npt.NDArray[np.int32 |
                                      np.float64]] = list(rslts.values())
+        print("initialized rslts_list")
         if rslts_list[0].dtype != np.int32:
             raise TypeError('Graph evaluation results not np.int32 '
                             'when computing fingerprint.')
+        print("got rslts_list")
+        for r in rslts_list:
+            print(r)
         return self.hash_tensor_set(rslts_list)  # type: ignore
 
     def hash_tensor(self, tensor: npt.NDArray[np.int32]) -> int:

@@ -27,8 +27,15 @@ class RuleValidator():
     def eval_eq(self, lhs: Graph, rhs: Graph, inputs: list[npt.NDArray[np.float64]]) -> bool:
         lhs_rslt = evaluate.evaluate(lhs, inputs)  # type: ignore
         rhs_rslt = evaluate.evaluate(rhs, inputs)  # type: ignore
-        lhs_rslt_vals = sorted(list(lhs_rslt.values()))
-        rhs_rslt_vals = sorted(list(rhs_rslt.values()))
+
+        # lhs_rslt_vals = sorted(list(lhs_rslt.values()))
+        # rhs_rslt_vals = sorted(list(rhs_rslt.values()))
+        lhs_rslt_vals = list(lhs_rslt.values())
+        rhs_rslt_vals = list(rhs_rslt.values())
+
+        if len(lhs_rslt_vals) != len(rhs_rslt_vals):
+            return False
+
         all_eq = True
         for (lv, rv) in zip(lhs_rslt_vals, rhs_rslt_vals):
             all_eq = bool(all_eq and np.all(

@@ -19,3 +19,12 @@ class Operator(ABC):
     @abstractmethod
     def add_users(self, new_users: Iterable[Operator]) -> None:
         pass
+
+    @abstractmethod
+    def remove_user(self, op: Operator) -> None:
+        pass
+
+    @classmethod
+    @abstractmethod
+    def get_arity(cls) -> int:
+        pass

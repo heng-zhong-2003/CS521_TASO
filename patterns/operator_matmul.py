@@ -21,3 +21,10 @@ class MatmulOperator(Operator):
         for usr in new_users:
             if usr not in self.users:
                 self.users.append(usr)
+
+    def remove_user(self, op: Operator) -> None:
+        self.users.remove(op)
+
+    @classmethod
+    def get_arity(cls) -> int:
+        return 2
