@@ -30,7 +30,7 @@ def eval_matmul(inputs: list[npt.NDArray[np.int32 | np.float64]]) \
     """
     If inputs are 3 dimensional (shape (B, M, K)), then we assume the first
         dimension B is batching dimension for matmul.
-    This is ensured automatically by numpy.matmul.
+    This is ensured automatically by numpy.matmul().
     """
     # Typing stub of numpy.matmul returns Any, not NDArray.
     return cast(npt.NDArray[Any], np.matmul(inputs[0], inputs[1]))
