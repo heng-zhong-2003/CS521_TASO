@@ -11,21 +11,14 @@ class Codegen:
     def __init__(self) -> None:
         # Will need to maintain a map from operator nodes here to matched
         #   HloInstruction * names in C++.
-        self.op_map: dict[type, str] = self.build_op_map()
+        self.op_map: dict[type, str] = {
+            AddOperator: "Add",
+            MatmulOperator: "Dot",
+        }
         self.node_map: dict[Operator, str] = {}
         self.cpp_id: int = 0
         self.source_graph: Graph | None = None
         self.target_graph: Graph | None = None
-
-    def build_op_map(self) -> dict[type, str]:
-        """
-        create a map between python operators and hlo operator Manually
-        """
-        return {
-            InputOperator: None,
-            AddOperator: "kAdd",
-            MatmulOperator: "kDot"
-        }
 
     def get_opcode(self, node: Operator) -> str:
         """
@@ -130,7 +123,7 @@ class Codegen:
         )
 
         code_lines.append("  }")
-        code_lines.append("  return absl::OkStatus();")
+        # code_lines.append("  return absl::OkStatus();")
 
         return "\n".join(code_lines) + "\n"
 
