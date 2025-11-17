@@ -110,7 +110,7 @@ class Codegen:
             operand_names = [self.create_cpp_name(inp) for inp in inputs]
             operands_str = ", ".join(operand_names)
             code_lines.append(
-                f"    HloInstruction* {cpp_var} = root->parent()->AddInstruction("
+                f"    HloInstruction* {cpp_var} = root->AddInstruction("
                 f"HloInstruction::CreateBinary(root->shape(), HloOpcode::{xla_opcode}, {operands_str}));"
             )
 
