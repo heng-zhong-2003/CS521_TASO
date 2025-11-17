@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Callable, Any
+from typing import Callable, Any, cast
 from patterns.graph import Graph
 from patterns.operator_interface import Operator
 from patterns.operator_add import AddOperator
@@ -25,10 +25,22 @@ def eval_add(inputs: list[npt.NDArray[np.int32 | np.float64]]) \
     return inputs[0] + inputs[1]
 
 
+def eval_matmul(inputs: list[npt.NDArray[np.int32 | np.float64]]) \
+        -> npt.NDArray[Any]:
+    """
+    If inputs are 3 dimensional (shape (B, M, K)), then we assume the first
+        dimension B is batching dimension for matmul.
+    This is ensured automatically by numpy.matmul.
+    """
+    # Typing stub of numpy.matmul returns Any, not NDArray.
+    return cast(npt.NDArray[Any], np.matmul(inputs[0], inputs[1]))
+
+
 operator_eval_func_map: \
     dict[str, Callable[[list[npt.NDArray[np.int32 | np.float64]]],
                        npt.NDArray[np.int32 | np.float64]]] = {
         'add': eval_add,
+        'matmul': eval_matmul,
     }
 
 
