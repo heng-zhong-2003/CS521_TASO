@@ -56,7 +56,7 @@ namespace xla {{
 namespace {{
 absl::Status {self.visitor_class_name}::HandleAll(HloInstruction *root) {{
 '''
-        proj_utils.todo()
+        return begins
 
     def generate_cc_epilog(self) -> str:
         ends = f'''\
