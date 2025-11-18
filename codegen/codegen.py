@@ -45,8 +45,8 @@ class Codegen:
         self.target_graph = target_graph
         self.node_map.clear()
         self.cpp_id = 0
-        code_parts = [self.generate_prolog(), self.generate_source(), self.generate_target(),
-                      self.generate_epilog()]
+        code_parts = [self.generate_cc_prolog(), self.generate_source(), self.generate_target(),
+                      self.generate_cc_epilog()]
         return "\n".join(code_parts)
 
     def generate_cc_prolog(self) -> str:

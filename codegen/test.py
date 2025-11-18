@@ -1,7 +1,7 @@
 # test_codegen.py
 from patterns.operator_add import AddOperator
 from patterns.operator_matmul import MatmulOperator
-from patterns.operator_input import InputOperator  # 假设你有输入节点
+from patterns.operator_input import InputOperator
 from patterns.graph import Graph
 from codegen.codegen import Codegen
 import proj_utils
