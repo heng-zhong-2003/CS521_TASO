@@ -5,6 +5,7 @@ from patterns.operator_add import AddOperator
 from patterns.operator_matmul import MatmulOperator
 from patterns.operator_input import InputOperator
 from patterns.graph import Graph
+import proj_utils
 
 
 class Codegen:
@@ -19,6 +20,7 @@ class Codegen:
         self.cpp_id: int = 0
         self.source_graph: Graph | None = None
         self.target_graph: Graph | None = None
+        self.visitor_class_name = 'TASOVisitor'
 
     def get_opcode(self, node: Operator) -> str:
         """
@@ -46,13 +48,28 @@ class Codegen:
         code_parts = [self.generate_prolog(), self.generate_source(), self.generate_target(),
                       self.generate_epilog()]
         return "\n".join(code_parts)
-    
-    def generate_prolog(self) -> str:
-        return "// PROLOG: C++ function start\n"
 
-    def generate_epilog(self) -> str:
-        return "// EPILOG: C++ function end\n"
-    
+    def generate_cc_prolog(self) -> str:
+        includes = ''
+        begins = f'''\
+namespace xla {{
+namespace {{
+absl::Status {self.visitor_class_name}::HandleAll(HloInstruction *root) {{
+'''
+        proj_utils.todo()
+
+    def generate_cc_epilog(self) -> str:
+        ends = f'''\
+}}
+}}
+return absl::OkStatus();
+}}
+'''
+        return ends
+
+    def generate_h(self) -> str:
+        proj_utils.todo()
+
     def generate_source(self) -> str:
         """
         convert source graph to cpp
@@ -165,6 +182,3 @@ class Codegen:
         else:
             patterns_str = ", ".join(sub_patterns)
             return f"m::{xla_opcode}({patterns_str})"
-
-
-
