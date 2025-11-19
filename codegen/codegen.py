@@ -85,7 +85,7 @@ return absl::OkStatus();
             declare = "  HloInstruction *" + ", *".join(var_names) + ";\n"
         else:
             declare = ""
-        root_node = self.source_graph.outputs[0]
+        root_node = self.source_graph.get_outputs()[0]
         match_function = self.build_Match(root_node)
         return f"""{declare}
           // Match source pattern
@@ -112,7 +112,7 @@ return absl::OkStatus();
                 continue
             if node in self.node_map and node in self.search(self.source_graph):
                 continue
-            if node == self.target_graph.outputs[0]:
+            if node == self.target_graph.get_outputs()[0]:
                 continue
 
             cpp_var = self.create_cpp_name(node)
@@ -128,7 +128,7 @@ return absl::OkStatus();
         # for example: return ReplaceWithNewInstruction(
         #         add,
         #         HloInstruction::CreateBinary(add->shape(), HloOpcode::kAdd, rhs, lhs));
-        new_root_node = self.target_graph.outputs[0]
+        new_root_node = self.target_graph.get_outputs()[0]
         xla_opcode = self.get_opcode(new_root_node)
         inputs = list(new_root_node.get_inputs())
         operand_names = [self.create_cpp_name(inp) for inp in inputs]
@@ -156,7 +156,7 @@ return absl::OkStatus();
                 dfs(inp)
             result.append(node)
 
-        for output in graph.outputs:
+        for output in graph.get_outputs():
             dfs(output)
 
         return result

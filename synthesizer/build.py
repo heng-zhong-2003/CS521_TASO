@@ -4,6 +4,7 @@ from patterns.evaluate import get_operator_kind
 import itertools
 from patterns.graph import Graph
 from synthesizer.fingerprint import Fingerprint
+import sys
 
 ## Implementing the BUILD function to generate random graphs given a list of operators ##
 ## ------------------------------------------------------------------------------------##
@@ -17,12 +18,12 @@ def build(n: int,
           threshold: int):
     # Recursively building a random graph
 
-    print("inside build")
+    print("inside build", file=sys.stderr)
     # Store current graph
     try:
         fp = F.fingerprint(G)
     except Exception as e:
-        print(f"[Fingerprint Error] {type(e).__name__}: {e}")
+        print(f"[Fingerprint Error] {type(e).__name__}: {e}", file=sys.stderr)
         # Skip graphs that can't be evaluated
         return
 
@@ -40,19 +41,19 @@ def build(n: int,
     for opClass in P:
         arity = opClass.get_arity()  # assume each operator class defines this
         # create combinations of arity number of objects at a time from the list I
-        print("inside for opclass in P")
+        print("inside for opclass in P", file=sys.stderr)
         for inputs in itertools.permutations(I, arity):
 
             new_op = opClass(list(inputs))
 
             # avoid duplicate computation. This is being done here instead of 
             # in the beginning of the function for efficiency
-            print("checking duplicates")
+            print("checking duplicates", file=sys.stderr)
             if(G.check_duplicates(new_op)):
                 # if duplicate found, don't use this operator combination
                 continue
 
-            print("adding new operator")
+            print("adding new operator", file=sys.stderr)
             # append to the graph (this automatically updates users list for the inputs)
             # also update the list of inputs available to further iterations
             G.add_operator(new_op)

@@ -25,6 +25,13 @@ class Graph:
     def get_inputs(self) -> list[InputOperator]:
         return self.inputs
 
+    def get_outputs(self) -> list[Operator]:
+        rslt: list[Operator] = []
+        for op in self.operators:
+            if all(False for _ in op.get_users()):
+                rslt.append(op)
+        return rslt
+
     def add_operator(self, op: Operator):
         self.operators.append(op)
         for i in op.get_inputs():
@@ -74,5 +81,3 @@ class Graph:
             op_map[op] = new_op
 
         return new_graph
-
-
