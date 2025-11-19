@@ -4,12 +4,27 @@ from patterns.operator_interface import Operator
 
 
 class MatmulOperator(Operator):
-    def __init__(self, lhs: Operator, rhs: Operator) -> None:
-        self.lhs: Operator = lhs
-        self.rhs: Operator = rhs
+    def __init__(self, lhs: Operator | list[Operator], rhs: Operator | None = None) -> None:
+        # self.lhs: Operator = lhs
+        # self.rhs: Operator = rhs
+        # self.users: list[Operator] = []
+        # lhs.add_users([self])
+        # rhs.add_users([self])
+
+        if isinstance(lhs, list):
+            if len(lhs) != 2:
+                raise ValueError(f"AddOperator expects 2 inputs, got {len(lhs)}")
+            self.lhs, self.rhs = lhs
+
+        else:
+            if rhs is None:
+                raise ValueError("AddOperator needs both lhs and rhs or a list of 2 inputs")
+            self.lhs, self.rhs = lhs, rhs
+
         self.users: list[Operator] = []
-        lhs.add_users([self])
-        rhs.add_users([self])
+        self.lhs.add_users([self])
+        self.rhs.add_users([self])
+
     
     def get_inputs(self) -> Iterable[Operator]:
         return [self.lhs, self.rhs]
