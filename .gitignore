@@ -40,5 +40,9 @@
 # debug information files
 *.dwo
 
-*.DS_Store
+.DS_Store
+**/.DS_Store
+__pycache__/
 **/__pycache__/
+.mypy_cache/
+**/.mypy_cache/
