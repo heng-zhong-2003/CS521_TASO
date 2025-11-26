@@ -78,5 +78,13 @@ class RuleGen:
                 keywords=[]
             )
         )
+        module_def = ast.Module(
+            body=[
+                target_func_def,
+                replacement_func_def,
+                rule_def
+            ],
+            type_ignores=[]
+        )
         self.rule_counter += 1
-        return rule_def
+        return module_def
