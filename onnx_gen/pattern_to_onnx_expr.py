@@ -36,7 +36,7 @@ class PatternToOnnxExpr:
         )
         return add_ast
 
-    def matmul_to_onnx_pattern(self,gop: MatmulOperator):
+    def matmul_to_onnx_pattern(self, gop: MatmulOperator):
         lhs, rhs = gop.get_inputs()
         lhs_onnx = op_to_onnx_expr(lhs)
         rhs_onnx = op_to_onnx_expr(rhs)
