@@ -29,10 +29,14 @@ class PatternToOnnxExpr:
         lhs, rhs = gop.get_inputs()
         lhs_onnx = self.op_to_onnx_expr(lhs)
         rhs_onnx = self.op_to_onnx_expr(rhs)
-        add_ast = ast.BinOp(
-            left=lhs_onnx,
-            op=ast.Add(),
-            right=rhs_onnx
+        add_ast = ast.Call(
+            func=ast.Attribute(
+                value=ast.Name(id=self.onnx_pattern_op_name, ctx=ast.Load()),
+                attr='Add',
+                ctx=ast.Load()
+            ),
+            args=[lhs_onnx, rhs_onnx],
+            keywords=[]
         )
         return add_ast
 
