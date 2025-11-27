@@ -68,12 +68,14 @@ onnx_model = onnx.load("test_matmul_add.onnx")
 print("Original ONNX model:")
 print(onnx_model)
 
+# BEGIN: Auto generated rules
 def taso_target_0(op, in_0, in_1, in_2):
     return op.Add(op.MatMul(in_0, in_1), op.MatMul(in_0, in_2))
 
 def taso_replacement_0(op, in_0, in_1, in_2):
     return op.MatMul(in_0, op.Add(in_1, in_2))
 taso_rule_0 = pattern.RewriteRule(taso_target_0, taso_replacement_0)
+# END: Auto generated rules
 
 onnx_model_rewritten = onnxscript.rewriter.rewrite(
     model=onnx_model,
