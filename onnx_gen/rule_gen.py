@@ -10,16 +10,16 @@ import proj_utils
 class RuleGen:
     def __init__(self) -> None:
         self.rule_counter = 0
-    
+
     def target_pattern_name(self) -> str:
         return f'taso_target_{self.rule_counter}'
-    
+
     def replacement_pattern_name(self) -> str:
         return f'taso_replacement_{self.rule_counter}'
-    
+
     def rule_name(self) -> str:
         return f'taso_rule_{self.rule_counter}'
-    
+
     def generate_rule(self,
                       target_pattern: Graph,
                       replacement_pattern: Graph) -> ast.AST:
@@ -29,10 +29,17 @@ class RuleGen:
         target_ast, target_ins = \
             ptoe_target.pattern_to_onnx_pattern(target_pattern)
         ptoe_replacement = PatternToOnnxExpr()
+
+        print('Translate replacement pattern')
         replacement_ast, replacement_ins = \
             ptoe_replacement.pattern_to_onnx_pattern(replacement_pattern)
-        target_par_op = [ast.arg(arg=ptoe_target.onnx_pattern_op_name, annotation=None)]
-        target_par_inst = [ast.arg(arg=n, annotation=None) for n in ptoe_target.input_ops]
+        # print("Target AST:", ast.dump(target_ast))
+        # print("Replacement AST:", ast.dump(replacement_ast))
+        target_par_op = [
+            ast.arg(arg=ptoe_target.onnx_pattern_op_name, annotation=None)]
+        target_par_inst = [
+            ast.arg(arg=n, annotation=None)
+            for n in ptoe_target.input_ops_names_map.values()]
         target_args = ast.arguments(
             posonlyargs=[],
             args=target_par_op + target_par_inst,
@@ -45,12 +52,15 @@ class RuleGen:
         target_func_def = ast.FunctionDef(
             name=tpn,
             args=target_args,
-            body=[ast.Return(value=target_ast)], # type: ignore
+            body=[ast.Return(value=target_ast)],  # type: ignore
             decorator_list=[],
             type_params=[]
         )
-        replacement_par_op = [ast.arg(arg=ptoe_replacement.onnx_pattern_op_name, annotation=None)]
-        replacement_par_inst = [ast.arg(arg=n, annotation=None) for n in ptoe_replacement.input_ops]
+        replacement_par_op = [
+            ast.arg(arg=ptoe_replacement.onnx_pattern_op_name, annotation=None)]
+        replacement_par_inst = [
+            ast.arg(arg=n, annotation=None)
+            for n in ptoe_replacement.input_ops_names_map.values()]
         replacement_args = ast.arguments(
             posonlyargs=[],
             args=replacement_par_op + replacement_par_inst,
@@ -63,7 +73,7 @@ class RuleGen:
         replacement_func_def = ast.FunctionDef(
             name=rpn,
             args=replacement_args,
-            body=[ast.Return(value=replacement_ast)], # type: ignore
+            body=[ast.Return(value=replacement_ast)],  # type: ignore
             decorator_list=[],
             type_params=[]
         )

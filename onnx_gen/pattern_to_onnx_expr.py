@@ -18,7 +18,7 @@ class PatternToOnnxExpr:
     def __init__(self) -> None:
         self.onnx_pattern_op_name = 'op'
         self.input_op_counter = 0
-        self.input_ops: list[str] = []
+        self.input_ops_names_map: dict[Operator, str] = {}
 
     def new_input_op_name(self) -> str:
         name = f'in_{self.input_op_counter}'
@@ -27,8 +27,8 @@ class PatternToOnnxExpr:
 
     def add_to_onnx_pattern(self,gop: AddOperator):
         lhs, rhs = gop.get_inputs()
-        lhs_onnx = op_to_onnx_expr(lhs)
-        rhs_onnx = op_to_onnx_expr(rhs)
+        lhs_onnx = self.op_to_onnx_expr(lhs)
+        rhs_onnx = self.op_to_onnx_expr(rhs)
         add_ast = ast.BinOp(
             left=lhs_onnx,
             op=ast.Add(),
@@ -38,8 +38,8 @@ class PatternToOnnxExpr:
 
     def matmul_to_onnx_pattern(self, gop: MatmulOperator):
         lhs, rhs = gop.get_inputs()
-        lhs_onnx = op_to_onnx_expr(lhs)
-        rhs_onnx = op_to_onnx_expr(rhs)
+        lhs_onnx = self.op_to_onnx_expr(lhs)
+        rhs_onnx = self.op_to_onnx_expr(rhs)
         matmul_ast = ast.Call(
             func=ast.Attribute(
                 value=ast.Name(id=self.onnx_pattern_op_name, ctx=ast.Load()),
@@ -52,8 +52,14 @@ class PatternToOnnxExpr:
         return matmul_ast
     
     def input_to_onnx_pattern(self, gop: InputOperator):
-        name = self.new_input_op_name()
-        self.input_ops.append(name)
+        # name = self.new_input_op_name()
+        # self.input_ops.append(name)
+        name: str
+        if gop in self.input_ops_names_map:
+            name = self.input_ops_names_map[gop]
+        else:
+            name = self.new_input_op_name()
+            self.input_ops_names_map[gop] = name
         input_ast = ast.Name(id=name, ctx=ast.Load())
         return input_ast
 
@@ -72,5 +78,8 @@ class PatternToOnnxExpr:
     def pattern_to_onnx_pattern(self, pattern: Graph) -> tuple[ast.AST, list[str]]:
         if len(pattern.get_outputs()) > 1:
             raise NotImplementedError(
-                'Only single-root patterns for now')
-        return self.op_to_onnx_expr(pattern.get_outputs()[0]), self.input_ops
+                f'Only single-root patterns for now, '
+                f'rule has {len(pattern.get_outputs())} outputs')
+        print(f'translating node of type {type(pattern.get_outputs()[0])}')
+        return self.op_to_onnx_expr(pattern.get_outputs()[0]), \
+            list(self.input_ops_names_map.values())

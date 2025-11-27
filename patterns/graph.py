@@ -3,6 +3,7 @@ from patterns.operator_interface import Operator
 from patterns.operator_add import AddOperator
 from patterns.operator_matmul import MatmulOperator
 from patterns.operator_input import InputOperator
+import copy
 # from patterns.evaluate import get_operator_kind
 
 def get_operator_kind(op: Operator) -> str:
@@ -20,7 +21,7 @@ class Graph:
 
         # BHsketch --- maintain a list of operators so it's easy to check for duplicates
         # initialized also, with just the inputs
-        self.operators : list[Operator] = inputs
+        self.operators : list[Operator] = copy.copy(inputs) # type: ignore
     
     def get_inputs(self) -> list[InputOperator]:
         return self.inputs

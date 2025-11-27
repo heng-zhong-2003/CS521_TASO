@@ -6,7 +6,12 @@ from synthesizer.fingerprint import Fingerprint
 from synthesizer.validate import RuleValidator
 from synthesizer.build import build  # your Build() implementation
 import itertools
+import ast
+from onnx_gen.rule_gen import RuleGen
 
+
+rules: list[tuple[Graph, Graph]] = []
+rg = RuleGen()
 
 def main():
     # 1️⃣ Initialize helpers
@@ -48,9 +53,17 @@ def main():
             for g1, g2 in itertools.combinations(graphs, 2):
                 if validator.validate(g1, g2):
                     print(f"✅ Equivalent graphs found for fingerprint {fp}")
+                    rules.append((g1, g2))
                 else:
                     print(f"❌ Different graphs for fingerprint {fp}")
 
 
 if __name__ == "__main__":
     main()
+    # for g1, g2 in rules:
+    #     try:
+    #         rule = rg.generate_rule(g1, g2)
+    #         print("\n--- Rule ---")
+    #         print(rule.unparse())
+    #     except Exception as e:
+    #         print(f"Exception {e}")
