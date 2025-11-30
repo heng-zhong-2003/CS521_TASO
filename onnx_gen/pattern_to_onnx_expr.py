@@ -41,7 +41,7 @@ class PatternToOnnxExpr:
                 attr='Add',
                 ctx=ast.Load()
             ),
-            args=[lhs_onnx, rhs_onnx],
+            args=[lhs_onnx, rhs_onnx], # type: ignore
             keywords=[]
         )
         return add_ast
@@ -56,7 +56,7 @@ class PatternToOnnxExpr:
                 attr='MatMul',
                 ctx=ast.Load()
             ),
-            args=[lhs_onnx, rhs_onnx],
+            args=[lhs_onnx, rhs_onnx], # type: ignore
             keywords=[]
         )
         return matmul_ast
