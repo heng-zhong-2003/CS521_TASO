@@ -41,27 +41,42 @@ print("Original ONNX model:")
 print(onnx_model)
 
 
-def target_pattern(op, in1, in2, in3):
-    return op.MatMul(in1, in2), op.MatMul(in1, in3)
+def target(op, a, b, c):
+    y0 = op.MatMul(a, b)
+    y1 = op.MatMul(a, c)
+    return y0, y1
 
 
-def replacement_pattern(op, in1, in2, in3):
-    return op.MatMul(in1, op.Sub(op.Add(in2, in3), in3)), \
-        op.MatMul(in1, op.Sub(op.Add(in2, in3), in2))
+def replacement(op, a, b, c):
+    bc = op.Concat(b, c, axis=1)
+    fused = op.MatMul(a, bc)
+    out0, out1 = op.Split(
+        fused, num_outputs=2, axis=1, _outputs=["out1", "out2"]
+    )
+    return out0, out1
 
 
-mr_matcher = pattern.SimplePatternMatcher(
-    onnx_model.graph,
-)
+def cond(ctx, a, b, c):
+    n0, n1 = ctx.nodes
+    # Require that the two MatMul are not the same to prevent
+    #   infinite matching on the same node.
+    return (n0 is not n1) and (n0.inputs[1] is not n1.inputs[1])
 
-mrr = pattern.RewriteRule(
-    target_pattern,
-    replacement_pattern,
-    matcher=mr_matcher
-)
-rm = onnxscript.rewriter.rewrite(
-    model=onnx_model,
-    pattern_rewrite_rules=[mrr],
-)
+
+mrr = pattern.RewriteRule(target, replacement, condition_function=cond)
+
+ir_model = ir.serde.deserialize_model(onnx_model)
+pattern.RewriteRuleSet([mrr]).apply_to_model(ir_model, verbose=2)
+
+# pattern.RewriteRuleSet([mrr]).apply_to_model(
+#     onnx_model, verbose=2, tracer=pattern.MatchingTracer()
+# )
+
+rm = ir.serde.serialize_model(ir_model)
+
+# rm = onnxscript.rewriter.rewrite(
+#     model=onnx_model,
+#     pattern_rewrite_rules=[mrr],
+# )
 print("Rewritten ONNX model:")
 print(rm)
