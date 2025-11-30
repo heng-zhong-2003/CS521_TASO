@@ -37,12 +37,10 @@ class RuleGen:
         # print("Replacement AST:", ast.dump(replacement_ast))
         target_par_op = [
             ast.arg(arg=ptoe_target.onnx_pattern_op_name, annotation=None)]
-        target_par_inst = [
-            ast.arg(arg=n, annotation=None)
-            for n in ptoe_target.input_ops_names_map.values()]
+        target_par_ins = [ast.arg(arg=n, annotation=None) for n in target_ins]
         target_args = ast.arguments(
             posonlyargs=[],
-            args=target_par_op + target_par_inst,
+            args=target_par_op + target_par_ins,
             vararg=None,
             kwonlyargs=[],
             kw_defaults=[],
@@ -58,12 +56,11 @@ class RuleGen:
         )
         replacement_par_op = [
             ast.arg(arg=ptoe_replacement.onnx_pattern_op_name, annotation=None)]
-        replacement_par_inst = [
-            ast.arg(arg=n, annotation=None)
-            for n in ptoe_replacement.input_ops_names_map.values()]
+        replacement_par_ins = [
+            ast.arg(arg=n, annotation=None) for n in replacement_ins]
         replacement_args = ast.arguments(
             posonlyargs=[],
-            args=replacement_par_op + replacement_par_inst,
+            args=replacement_par_op + replacement_par_ins,
             vararg=None,
             kwonlyargs=[],
             kw_defaults=[],

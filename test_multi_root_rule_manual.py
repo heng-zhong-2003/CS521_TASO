@@ -41,27 +41,42 @@ print("Original ONNX model:")
 print(onnx_model)
 
 
-# This is an incorrect rewrite rule.
-# Just to test that the rule generation for multi output operator rule works.
-a1 = InputOperator()
-b1 = InputOperator()
-c1 = InputOperator()
-mmab = MatmulOperator(a1, b1)
-mmac = MatmulOperator(a1, c1)
-g1 = Graph([a1, b1, c1])
-g1.add_operator(mmab)
-g1.add_operator(mmac)
+def target(op, a, b, c):
+    y0 = op.MatMul(a, b)
+    y1 = op.MatMul(a, c)
+    return y0, y1
 
-a2 = InputOperator()
-b2 = InputOperator()
-c2 = InputOperator()
-add1 = AddOperator(a2, b2)
-add2 = AddOperator(a2, c2)
-g2 = Graph([a2, b2, c2])
-g2.add_operator(add1)
-g2.add_operator(add2)
 
-rg = RuleGen()
-rule_ast = rg.generate_rule(g1, g2)
-rule_ast = ast.fix_missing_locations(rule_ast)
-print(ast.unparse(rule_ast))
+def replacement(op, a, b, c):
+    bc = op.Concat(b, c, axis=1)
+    fused = op.MatMul(a, bc)
+    out0, out1 = op.Split(
+        fused, num_outputs=2, axis=1, _outputs=2
+    )
+    return out0, out1
+
+
+def cond(ctx, a, b, c):
+    n0, n1 = ctx.nodes
+    # Require that the two MatMul are not the same to prevent
+    #   infinite matching on the same node.
+    return (n0 is not n1) # and (n0.inputs[1] is not n1.inputs[1])
+
+
+mrr = pattern.RewriteRule(target, replacement, condition_function=cond)
+
+# ir_model = ir.serde.deserialize_model(onnx_model)
+# pattern.RewriteRuleSet([mrr]).apply_to_model(ir_model, verbose=2)
+
+# pattern.RewriteRuleSet([mrr]).apply_to_model(
+#     onnx_model, verbose=2, tracer=pattern.MatchingTracer()
+# )
+
+# rm = ir.serde.serialize_model(ir_model)
+
+rm = onnxscript.rewriter.rewrite(
+    model=onnx_model,
+    pattern_rewrite_rules=[mrr],
+)
+print("Rewritten ONNX model:")
+print(rm)

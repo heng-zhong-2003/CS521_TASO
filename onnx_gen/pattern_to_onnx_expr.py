@@ -2,6 +2,7 @@ import onnx
 from onnxscript.rewriter import pattern
 from onnxscript import ir
 import ast
+from ast import AST
 from patterns.graph import Graph
 from patterns.operator_add import AddOperator
 from patterns.operator_interface import Operator
@@ -15,17 +16,22 @@ class PatternToOnnxExpr:
     This means that for generating the target and replacement patterns
       of a rule, you need to create two separate objects of this class.
     """
+
     def __init__(self) -> None:
         self.onnx_pattern_op_name = 'op'
         self.input_op_counter = 0
+        # map: {graph input op -> input name in onnx pattern}
         self.input_ops_names_map: dict[Operator, str] = {}
+        # map: {graph op -> onnx pattern node}
+        # Here, the onnx pattern node is actually an AST node
+        self.graph_onnx_node_map: dict[Operator, AST] = {}
 
     def new_input_op_name(self) -> str:
         name = f'in_{self.input_op_counter}'
         self.input_op_counter += 1
         return name
 
-    def add_to_onnx_pattern(self,gop: AddOperator):
+    def add_to_onnx_pattern(self, gop: AddOperator):
         lhs, rhs = gop.get_inputs()
         lhs_onnx = self.op_to_onnx_expr(lhs)
         rhs_onnx = self.op_to_onnx_expr(rhs)
@@ -54,7 +60,7 @@ class PatternToOnnxExpr:
             keywords=[]
         )
         return matmul_ast
-    
+
     def input_to_onnx_pattern(self, gop: InputOperator):
         # name = self.new_input_op_name()
         # self.input_ops.append(name)
@@ -67,23 +73,37 @@ class PatternToOnnxExpr:
         input_ast = ast.Name(id=name, ctx=ast.Load())
         return input_ast
 
-    def op_to_onnx_expr(self, gop: Operator):
+    def op_to_onnx_expr(self, gop: Operator) -> AST:
+        if gop in self.graph_onnx_node_map:
+            return self.graph_onnx_node_map[gop]
+
+        result: AST
         match gop:
             case AddOperator():
-                return self.add_to_onnx_pattern(gop)
+                result = self.add_to_onnx_pattern(gop)
             case MatmulOperator():
-                return self.matmul_to_onnx_pattern(gop)
+                result = self.matmul_to_onnx_pattern(gop)
             case InputOperator():
-                return self.input_to_onnx_pattern(gop)
+                result = self.input_to_onnx_pattern(gop)
             case _:
                 raise NotImplementedError(
                     f"ONNX pattern generation not implemented for {type(gop)}")
+        self.graph_onnx_node_map[gop] = result
+        return result
 
-    def pattern_to_onnx_pattern(self, pattern: Graph) -> tuple[ast.AST, list[str]]:
-        if len(pattern.get_outputs()) > 1:
-            raise NotImplementedError(
-                f'Only single-root patterns for now, '
-                f'rule has {len(pattern.get_outputs())} outputs')
-        print(f'translating node of type {type(pattern.get_outputs()[0])}')
-        return self.op_to_onnx_expr(pattern.get_outputs()[0]), \
-            list(self.input_ops_names_map.values())
+    def pattern_to_onnx_pattern(self, pattern_graph: Graph) -> \
+            tuple[ast.AST, list[str]]:
+        # if len(pattern.get_outputs()) > 1:
+        #     raise NotImplementedError(
+        #         f'Only single-root patterns for now, '
+        #         f'rule has {len(pattern.get_outputs())} outputs')
+        # print(f'translating node of type {type(pattern.get_outputs()[0])}')
+        if len(pattern_graph.get_outputs()) > 1:
+            onnx_outputs = []
+            for out in pattern_graph.get_outputs():
+                onnx_outputs.append(self.op_to_onnx_expr(out))
+            outputs_tup = ast.Tuple(elts=onnx_outputs, ctx=ast.Load())
+            return outputs_tup, list(self.input_ops_names_map.values())
+        else:
+            return self.op_to_onnx_expr(pattern_graph.get_outputs()[0]), \
+                list(self.input_ops_names_map.values())
