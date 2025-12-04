@@ -1,4 +1,5 @@
 from onnx_gen.pattern_to_onnx_expr import PatternToOnnxExpr
+from onnx_gen.match_conditions_gen import MatchConditionsGen
 import onnx
 from onnxscript.rewriter import pattern
 from onnxscript import ir
@@ -16,6 +17,9 @@ class RuleGen:
 
     def replacement_pattern_name(self) -> str:
         return f'taso_replacement_{self.rule_counter}'
+
+    def matching_conditions_name(self) -> str:
+        return f'taso_match_cond_{self.rule_counter}'
 
     def rule_name(self) -> str:
         return f'taso_rule_{self.rule_counter}'
@@ -74,13 +78,35 @@ class RuleGen:
             decorator_list=[],
             type_params=[]
         )
+        mcg = MatchConditionsGen(
+            ptoe_target.input_ops_names_map,
+            ptoe_target.graph_onnx_node_map
+        )
+        cond_ast = mcg.generate_matching_conditions(target_pattern)
+        cond_func_def = ast.FunctionDef(
+            name=self.matching_conditions_name(),
+            args=ast.arguments(
+                posonlyargs=[],
+                args=[ast.arg(arg=mcg.root_parameter_name, annotation=None)]
+                + target_par_ins,
+                vararg=None,
+                kwonlyargs=[],
+                kw_defaults=[],
+                kwarg=None,
+                defaults=[]
+            ),
+            body=[ast.Return(value=cond_ast)],  # type: ignore
+            decorator_list=[],
+            type_params=[]
+        )
         rule_def = ast.Assign(
             targets=[ast.Name(id=self.rule_name(), ctx=ast.Store())],
             value=ast.Call(
                 func=ast.Name(id='pattern.RewriteRule', ctx=ast.Load()),
                 args=[
                     ast.Name(id=tpn, ctx=ast.Load()),
-                    ast.Name(id=rpn, ctx=ast.Load())
+                    ast.Name(id=rpn, ctx=ast.Load()),
+                    ast.Name(id=self.matching_conditions_name(), ctx=ast.Load())
                 ],
                 keywords=[]
             )
@@ -89,6 +115,7 @@ class RuleGen:
             body=[
                 target_func_def,
                 replacement_func_def,
+                cond_func_def,
                 rule_def
             ],
             type_ignores=[]
