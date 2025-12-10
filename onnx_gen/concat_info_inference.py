@@ -105,6 +105,10 @@ class ConcatInfoInference:
     def infer_matmul_one_step(self, op) -> bool:
         inputs = op.get_inputs()
         lhs_info, rhs_info = [self.op_concat_info_map.get(i) for i in inputs]
+        if lhs_info and rhs_info:
+            return False
+        elif not lhs_info and not rhs_info:
+            return True
         proj_utils.todo()
 
     def infer_concat_one_step(self, op: ConcatOperator) -> bool:
