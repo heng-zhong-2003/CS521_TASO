@@ -14,17 +14,15 @@ import proj_utils
 
 
 @dataclass
-class FromConcat:
+class ConcatInfo:
     """
     concat_dim: When split, split along this dimension.
     split_pos: When generate onnx rules, instantiate this symbolic value to the
       split position represented in the AST of the dimension of tensor.
+    Pure value, copyable.
     """
     concat_dim: int
     split_pos: Any  # sympy.Symbol. sympy has limited support for typing
-
-
-type ConcatInfo = FromConcat | None
 
 
 class ConcatInfoInference:
@@ -33,7 +31,9 @@ class ConcatInfoInference:
     """
 
     def __init__(self) -> None:
-        self.op_concat_info_map: dict[Operator, ConcatInfo] = {}
+        # value: list of the effects of previous concats.
+        # The last element is the most recent concat effect.
+        self.op_concat_info_map: dict[Operator, list[ConcatInfo]] = {}
         self.symbol_counter = 0
 
     def get_new_pos(self) -> Any:
@@ -69,17 +69,17 @@ class ConcatInfoInference:
     def infer_add_one_step(self, op) -> bool:
         inputs = op.get_inputs()
         lhs_info, rhs_info = [self.op_concat_info_map.get(i) for i in inputs]
-        if lhs_info is None and rhs_info is None:
-            self.op_concat_info_map[op] = None
+        if not lhs_info and not rhs_info: # not l means l is None or empty.
             return True
-        elif lhs_info is not None and rhs_info is not None:
+        elif lhs_info and rhs_info:
             # <= 1 input of add operator allowed to have concat info (to be a
             #   result of concat).
             return False
-        elif lhs_info is not None:
+        elif lhs_info:
             self.op_concat_info_map[op] = lhs_info
             return True
-        else: # rhs_info is not None
+        else: # rhs_info is not None and not empty.
+            assert rhs_info is not None
             self.op_concat_info_map[op] = rhs_info
             return True
     
@@ -87,3 +87,21 @@ class ConcatInfoInference:
         inputs = op.get_inputs()
         lhs_info, rhs_info = [self.op_concat_info_map.get(i) for i in inputs]
         proj_utils.todo()
+    
+    def infer_concat_one_step(self, op) -> bool:
+        inputs = op.get_inputs()
+        lhs_info, rhs_info = [self.op_concat_info_map.get(i) for i in inputs]
+        if lhs_info and rhs_info:
+            return False
+        proj_utils.todo()
+    
+    def infer_split_one_step(self, op) -> bool:
+        x, = op.get_inputs()
+        x_info = self.op_concat_info_map.get(x)
+        if not x_info:
+            # self.op_concat_info_map[op] = None
+            # Split must counteract (undo) the effect of a previous concat.
+            return False
+        else:
+            self.op_concat_info_map[op] = x_info[:-1]
+            return True
