@@ -29,7 +29,7 @@ class OpDim:
     def __init__(self, op: Operator, dim: int) -> None:
         self.op = op
         self.dim = dim
-    
+
     def __eq__(self, value: object) -> bool:
         """
         Returns true if:
@@ -46,7 +46,7 @@ class ConcatInfoInference:
     One new instance of this class for the inference of each graph pattern.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, rank: int) -> None:
         # value: list of the effects of previous concats.
         # The last element is the most recent concat effect.
         self.op_concat_info_map: dict[Operator, list[ConcatInfo]] = {}
@@ -56,6 +56,8 @@ class ConcatInfoInference:
         #   same content different instance? issue.
         self.op_dim_pos_symbol_map: dict[OpDim, str] = {}
         self.symbol_counter = 0
+        # Rank of tensors in the graph pattern. Affects only matmul.
+        self.rank = rank
 
     def get_new_pos(self) -> str:
         ret = f'pos_{self.symbol_counter}'
@@ -109,7 +111,17 @@ class ConcatInfoInference:
             return False
         elif not lhs_info and not rhs_info:
             return True
-        proj_utils.todo()
+        # Last two dimensions of matmul inputs are involved in the actual
+        #   matmul.
+        # The dimensions before are batching dimensions.
+        if rhs_info and rhs_info[-1].concat_dim == self.rank - 1:
+            self.op_concat_info_map[op] = rhs_info
+            return True
+        if lhs_info and lhs_info[-1].concat_dim == self.rank - 2:
+            self.op_concat_info_map[op] = lhs_info
+            return True
+
+        return False
 
     def infer_concat_one_step(self, op: ConcatOperator) -> bool:
         inputs = op.get_inputs()
