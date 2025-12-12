@@ -41,7 +41,25 @@ class EvalGraph:
         current_depth = 0
         visited: set[Operator] = set()
         queue: deque[Operator] = deque(self.comp_graph.get_inputs())
-        proj_utils.todo()
+        while queue:
+            curr_depth_size: int = len(queue)
+            for _ in range(curr_depth_size):
+                op = queue.popleft()
+                if op in visited:
+                    continue
+                visited.add(op)
+                self.eval_op(op)
+                is_empty = True
+                for user in op.get_users():
+                    is_empty = False
+                    if user not in visited:
+                        queue.append(user)
+            current_depth += 1
+        graph_outputs = self.comp_graph.get_outputs()
+        output_op_rslt_map: dict[Operator, npt.NDArray[Any]] = {}
+        for out_op in graph_outputs:
+            output_op_rslt_map[out_op] = self.aux_get_result_val(out_op)
+        return output_op_rslt_map
 
     def eval_op(self, op: Operator) -> None:
         match op:
