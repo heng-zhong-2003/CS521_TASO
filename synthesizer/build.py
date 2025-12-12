@@ -9,12 +9,13 @@ import sys
 ## Implementing the BUILD function to generate random graphs given a list of operators ##
 ## ------------------------------------------------------------------------------------##
 
-def build(n: int, 
-          G: Graph, 
-          I: list[Operator], 
-          P: list[type[Operator]], 
+
+def build(n: int,
+          G: Graph,
+          I: list[Operator],
+          P: list[type[Operator]],
           D: dict[int, list[Graph]],
-          F: Fingerprint, 
+          F: Fingerprint,
           threshold: int):
     # Recursively building a random graph
 
@@ -46,10 +47,10 @@ def build(n: int,
 
             new_op = opClass(list(inputs))
 
-            # avoid duplicate computation. This is being done here instead of 
+            # avoid duplicate computation. This is being done here instead of
             # in the beginning of the function for efficiency
             print("checking duplicates", file=sys.stderr)
-            if(G.check_duplicates(new_op)):
+            if (G.check_duplicates(new_op)):
                 # if duplicate found, don't use this operator combination
                 continue
 
@@ -67,5 +68,3 @@ def build(n: int,
             # G.pop()
             G.remove_operator(new_op)
             I.remove(new_op)
-
-
