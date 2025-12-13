@@ -1,11 +1,15 @@
 from __future__ import annotations
 from patterns import evaluate
+from patterns.eval_graph import EvalGraph
 from patterns.graph import Graph
 from patterns.operator_interface import Operator
+from onnx_gen.concat_info_inference import ConcatInfoInference
+from patterns.operator_split import SplitOperator
 import proj_utils
 from collections import Counter
 import hashlib
 import numpy as np
+from typing import Any
 import numpy.typing as npt
 
 
@@ -20,27 +24,23 @@ class Fingerprint:
             for _ in range(10)
         ]
 
-    def fingerprint(self, comp_graph: Graph) -> int:
-        # Have to ignore type checking because mypy is not covariant
-        #   for container element types.
-        # That is, t1 is subtype of t2 does not mean list[t1] is
-        #   subtype of list[t2].
-        print("about to evaluate")
-        rslts: dict[Operator, npt.NDArray[np.int32 | np.float64]] = \
-            evaluate.evaluate(
-                comp_graph,
-                self.inputs[0:len(comp_graph.get_inputs())])  # type: ignore
-        print("initialized rslts to a dict of", len(rslts))
-        rslts_list: list[npt.NDArray[np.int32 |
-                                     np.float64]] = list(rslts.values())
-        print("initialized rslts_list")
+    def fingerprint(self,
+                    comp_graph: Graph,
+                    inferer: ConcatInfoInference) -> int:
+        evaluator = EvalGraph(comp_graph, self.inputs, )
+        rslts: dict[Operator, Any] = evaluator.eval_graph()
+        rslts_list: list[Any] = []
+        for out_op, val in rslts.items():
+            match val:
+                case (s0, s1):
+                    assert isinstance(out_op, SplitOperator)
+                    rslts_list.extend([s0, s1])
+                case x:
+                    rslts_list.append(x)
         if rslts_list[0].dtype != np.int32:
             raise TypeError('Graph evaluation results not np.int32 '
                             'when computing fingerprint.')
-        print("got rslts_list")
-        for r in rslts_list:
-            print(r)
-        return self.hash_tensor_set(rslts_list)  # type: ignore
+        return self.hash_tensor_set(rslts_list)
 
     def hash_tensor(self, tensor: npt.NDArray[np.int32]) -> int:
         h = hashlib.sha256()

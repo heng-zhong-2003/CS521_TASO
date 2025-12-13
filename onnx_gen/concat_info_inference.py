@@ -51,6 +51,7 @@ class OpDim:
 class ConcatInfoInference:
     """
     One new instance of this class for the inference of each graph pattern.
+    Run infer_all() before: fingerprint, validate, pattern to onnx.
     """
 
     def __init__(self, rank: int, g: Graph) -> None:
@@ -86,6 +87,10 @@ class ConcatInfoInference:
                         queue.append(user)
             current_depth += 1
         return True
+    
+    def infer_concrete(self, op_shape_map: dict[Operator, tuple[int, ...]]) \
+        -> dict[SplitOperator, int]:
+        proj_utils.todo()
 
     def get_new_pos(self) -> str:
         ret = f'pos_{self.symbol_counter}'
