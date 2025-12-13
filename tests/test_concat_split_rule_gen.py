@@ -39,13 +39,48 @@ g2.add_operator(spl)
 inferrer1 = ConcatInfoInference(2, g1)
 inferrer2 = ConcatInfoInference(2, g2)
 
+print('Inferring g1:')
 infer_rslt1 = inferrer1.infer_all()
 assert infer_rslt1
+
+print('Inferring g2:')
 infer_rslt2 = inferrer2.infer_all()
 assert infer_rslt2
+print(f'Inferrer 2 op concat info map: {inferrer2.op_concat_info_map}')
 
 rg = RuleGen()
 rg.plug_in_inferrers(inferrer1, inferrer2)
 rule_ast = rg.generate_rule(g1, g2)
 rule_ast = ast.fix_missing_locations(rule_ast)
 print(ast.unparse(rule_ast))
+
+
+# BEGIN: Auto generated rules
+def taso_target_0(op, in_0, in_1, in_2):
+    return (
+        op.MatMul(in_0, in_1),
+        op.MatMul(in_0, in_2)
+    )
+
+
+def taso_replacement_0(op, in_0, in_1, in_2):
+    return op.Split(
+        op.MatMul(in_0, op.Concat(in_1, in_2, axis=1)),
+        num_outputs=2,
+        splits=[op.Shape(in_1)[1], op.Shape(in_2)[1]]
+    )
+
+
+def taso_match_cond_0(ctx, in_0, in_1, in_2):
+    return all(
+        [TASO_x is not TASO_y
+         for TASO_x, TASO_y in itertools.combinations(ctx.nodes, 2)]
+    )
+
+
+taso_rule_0 = pattern.RewriteRule(
+    taso_target_0,
+    taso_replacement_0,
+    taso_match_cond_0
+)
+# END: Auto generated rules

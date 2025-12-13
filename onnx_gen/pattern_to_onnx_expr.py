@@ -68,17 +68,14 @@ class PatternToOnnxExpr:
         inp_onnx: AST = self.op_to_onnx_expr(inp, user=gop)
         inp_concat_info: ConcatInfo = self.inferrer.op_concat_info_map[inp][0]
         undone_concat: Operator = inp_concat_info.cocat_op
+        assert isinstance(undone_concat, ConcatOperator)
         split_dim = inp_concat_info.concat_dim
         split_pos_symb: str = self.inferrer.op_dim_pos_symbol_map[
-            OpDim(undone_concat, split_dim)]
+            OpDim(undone_concat.get_inputs()[0], split_dim)]
         split_pos_ast: AST = \
             self.pos_symbol_runtime_value_ast_map[split_pos_symb]
-        dim_len_ast = self.get_dim_runtime_value_ast(gop, split_dim)
-        second_len_ast = ast.BinOp(
-            left=dim_len_ast,  # type: ignore
-            op=ast.Sub(),
-            right=split_pos_ast  # type: ignore
-        )
+        second_len_ast = self.get_dim_runtime_value_ast(
+            undone_concat.get_inputs()[1], split_dim)
         assert isinstance(split_pos_ast, ast.expr)
         split_ast = ast.Call(
             func=ast.Attribute(
@@ -101,11 +98,12 @@ class PatternToOnnxExpr:
         lhs, rhs = gop.get_inputs()
         lhs_onnx = self.op_to_onnx_expr(lhs, user=gop)
         rhs_onnx = self.op_to_onnx_expr(rhs, user=gop)
+        print(f'Inferrer op dim pos map: {self.inferrer.op_dim_pos_symbol_map}')
         this_concat_pos_symbol: str = \
-            self.inferrer.op_dim_pos_symbol_map[OpDim(gop, gop.axis)]
+            self.inferrer.op_dim_pos_symbol_map[OpDim(lhs, gop.axis)]
         this_concat_dim = gop.axis
         this_concat_pos_ast = \
-            self.get_dim_runtime_value_ast(gop, this_concat_dim)
+            self.get_dim_runtime_value_ast(lhs, this_concat_dim)
         self.pos_symbol_runtime_value_ast_map[this_concat_pos_symbol] = \
             this_concat_pos_ast
         concat_ast = ast.Call(
@@ -191,12 +189,16 @@ class PatternToOnnxExpr:
             case ConcatOperator():
                 result = self.concat_to_onnx_pattern(gop)
             case SplitOperator():
-                assert user is not None
-                split_ast = self.split_to_onnx_pattern(gop)
-                # Determine which output of the split to use.
-                user_index = gop.get_user_component(user)
-                result = self.get_indexing_split_result_ast(
-                    split_ast, user_index)
+                if user is not None:
+                    # When the result of the split is used by subsequent ops.
+                    print(f'User of split: {user}')
+                    split_ast = self.split_to_onnx_pattern(gop)
+                    # Determine which output of the split to use.
+                    user_index = gop.get_user_component(user)
+                    result = self.get_indexing_split_result_ast(
+                        split_ast, user_index)
+                else:
+                    result = self.split_to_onnx_pattern(gop)
             case _:
                 raise NotImplementedError(
                     f"ONNX pattern generation not implemented for {type(gop)}")
@@ -213,13 +215,12 @@ class PatternToOnnxExpr:
         if len(pattern_graph.get_outputs()) > 1:
             onnx_outputs = []
             for out in pattern_graph.get_outputs():
-                onnx_outputs.append(self.op_to_onnx_expr(out, user=out))
+                onnx_outputs.append(self.op_to_onnx_expr(out))
             outputs_tup = ast.Tuple(elts=onnx_outputs, ctx=ast.Load())
             return outputs_tup, list(self.input_ops_names_map.values())
         else:
             return (
                 self.op_to_onnx_expr(
-                    pattern_graph.get_outputs()[0],
-                    user=pattern_graph.get_outputs()[0]),
-                list(self.input_ops_names_map.values())
+                    pattern_graph.get_outputs()[0]),
+                    list(self.input_ops_names_map.values())
             )

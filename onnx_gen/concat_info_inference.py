@@ -11,7 +11,7 @@ from dataclasses import dataclass
 import sympy
 from sympy import Symbol
 import proj_utils
-from collections import deque
+from collections import deque, defaultdict
 
 
 @dataclass
@@ -41,7 +41,7 @@ class OpDim:
         """
         if not isinstance(value, OpDim):
             return False
-        return self.op == value.op and self.dim == value.dim
+        return self.op is value.op and self.dim == value.dim
     
     def __hash__(self) -> int:
         return hash((self.op, self.dim))
@@ -70,25 +70,49 @@ class ConcatInfoInference:
         self.rank = rank
         self.graph = g
     
+    # def infer_all(self) -> bool:
+    #     current_depth = 0
+    #     visited: set[Operator] = set()
+    #     queue: deque[Operator] = deque(self.graph.get_inputs())
+    #     while queue:
+    #         curr_depth_size: int = len(queue)
+    #         for _ in range(curr_depth_size):
+    #             op = queue.popleft()
+    #             if op in visited:
+    #                 continue
+    #             visited.add(op)
+    #             print(f'Inferring op {op}')
+    #             valid = self.infer_one_step(op)
+    #             if not valid:
+    #                 # print(f'Infer concat info invalid at op {op}')
+    #                 return False
+    #             for user in op.get_users():
+    #                 if user not in visited:
+    #                     queue.append(user)
+    #         current_depth += 1
+    #     return True
+
+
     def infer_all(self) -> bool:
-        current_depth = 0
-        visited: set[Operator] = set()
-        queue: deque[Operator] = deque(self.graph.get_inputs())
+        indeg = defaultdict(int)
+
+        for op in self.graph.operators:
+            for user in op.get_users():
+                indeg[user] += 1
+
+        queue = deque(op for op in self.graph.operators if indeg[op] == 0)
+
         while queue:
-            curr_depth_size: int = len(queue)
-            for _ in range(curr_depth_size):
-                op = queue.popleft()
-                if op in visited:
-                    continue
-                visited.add(op)
-                valid = self.infer_one_step(op)
-                if not valid:
-                    # print(f'Infer concat info invalid at op {op}')
-                    return False
-                for user in op.get_users():
-                    if user not in visited:
-                        queue.append(user)
-            current_depth += 1
+            op = queue.popleft()
+
+            if not self.infer_one_step(op):
+                return False
+
+            for user in op.get_users():
+                indeg[user] -= 1
+                if indeg[user] == 0:
+                    queue.append(user)
+
         return True
     
     def infer_concrete(self, op_shape_map: dict[Operator, tuple[int, ...]]) \
@@ -197,7 +221,7 @@ class ConcatInfoInference:
         assert isinstance(op, SplitOperator)
         x, = op.get_inputs()
         x_info = self.op_concat_info_map.get(x)
-        print(f'Split op {op} input concat op {x} info: {x_info}')
+        # print(f'Split op {op} input concat op {x} info: {x_info}')
         if not x_info:
             # self.op_concat_info_map[op] = None
             # Split must counteract (undo) the effect of a previous concat.
