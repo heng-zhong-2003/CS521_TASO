@@ -11,6 +11,7 @@ from dataclasses import dataclass
 import sympy
 from sympy import Symbol
 import proj_utils
+from collections import deque
 
 
 @dataclass
@@ -39,6 +40,12 @@ class OpDim:
         if not isinstance(value, OpDim):
             return False
         return self.op == value.op and self.dim == value.dim
+    
+    def __hash__(self) -> int:
+        return hash((self.op, self.dim))
+    
+    def __repr__(self) -> str:
+        return f'OpDim(op={self.op}, dim={self.dim})'
 
 
 class ConcatInfoInference:
@@ -46,7 +53,7 @@ class ConcatInfoInference:
     One new instance of this class for the inference of each graph pattern.
     """
 
-    def __init__(self, rank: int) -> None:
+    def __init__(self, rank: int, g: Graph) -> None:
         # value: list of the effects of previous concats.
         # The last element is the most recent concat effect.
         self.op_concat_info_map: dict[Operator, list[ConcatInfo]] = {}
@@ -58,6 +65,27 @@ class ConcatInfoInference:
         self.symbol_counter = 0
         # Rank of tensors in the graph pattern. Affects only matmul.
         self.rank = rank
+        self.graph = g
+    
+    def infer_all(self) -> bool:
+        current_depth = 0
+        visited: set[Operator] = set()
+        queue: deque[Operator] = deque(self.graph.get_inputs())
+        while queue:
+            curr_depth_size: int = len(queue)
+            for _ in range(curr_depth_size):
+                op = queue.popleft()
+                if op in visited:
+                    continue
+                visited.add(op)
+                valid = self.infer_one_step(op)
+                if not valid:
+                    return False
+                for user in op.get_users():
+                    if user not in visited:
+                        queue.append(user)
+            current_depth += 1
+        return True
 
     def get_new_pos(self) -> str:
         ret = f'pos_{self.symbol_counter}'
@@ -152,6 +180,7 @@ class ConcatInfoInference:
             return True
 
     def infer_split_one_step(self, op) -> bool:
+        assert isinstance(op, SplitOperator)
         x, = op.get_inputs()
         x_info = self.op_concat_info_map.get(x)
         if not x_info:
@@ -160,4 +189,5 @@ class ConcatInfoInference:
             return False
         else:
             self.op_concat_info_map[op] = x_info[:-1]
+            op.axis = x_info[-1].concat_dim
             return True

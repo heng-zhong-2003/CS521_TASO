@@ -28,3 +28,7 @@ class ConcatOperator(Operator):
 
     def remove_user(self, op: Operator) -> None:
         self.users.remove(op)
+    
+    @classmethod
+    def get_arity(cls) -> int:
+        return 2

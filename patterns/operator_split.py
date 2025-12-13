@@ -6,14 +6,17 @@ from patterns.operator_interface import Operator
 class SplitOperator(Operator):
     def __init__(self, input_op: Operator, axis: int, splitted_concat: Operator) -> None:
         """
-        axis: split along the axis `axis`.
+        axis: split along this dimension. This parameter at init is just a
+            placeholder for ease in testing.
+        The actual split position is inferred by concat_info_inference.py and
+            stored in its map and also here self.axis.
         splitted_concat: This split "undos" the effect of op `splitted_concat`.
             This is an embedded implementation of the split tree in the paper.
         """
         self.input_op = input_op
-        self.axis = axis
         self.splitted_concat = splitted_concat
         self.users: list[Operator] = []
+        self.axis = axis
         self.input_op.add_users([self])
         # Map {user_operator -> component}
         # The user is using the 0th or 1st output of split.
@@ -41,3 +44,7 @@ class SplitOperator(Operator):
         self.users.remove(op)
         if op in self.user_component_map:
             del self.user_component_map[op]
+    
+    @classmethod
+    def get_arity(cls) -> int:
+        return 1

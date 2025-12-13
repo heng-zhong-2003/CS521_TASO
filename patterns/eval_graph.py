@@ -34,9 +34,11 @@ class EvalGraph:
         self.split_op_pos_map = split_op_pos_map
         self.split_set: set[SplitOperator] = set()
     
-    def eval_graph(self) -> dict[Operator, npt.NDArray[Any]]:
+    def eval_graph(self) -> dict[Operator, Any]:
         """
-        Returns map {output op -> its result value np array}
+        Returns map: {output op ->
+            its result value np array for other ops
+          | (split_0, split_1) for SplitOperator}
         """
         current_depth = 0
         visited: set[Operator] = set()
@@ -56,9 +58,9 @@ class EvalGraph:
                         queue.append(user)
             current_depth += 1
         graph_outputs = self.comp_graph.get_outputs()
-        output_op_rslt_map: dict[Operator, npt.NDArray[Any]] = {}
+        output_op_rslt_map: dict[Operator, Any] = {}
         for out_op in graph_outputs:
-            output_op_rslt_map[out_op] = self.aux_get_result_val(out_op)
+            output_op_rslt_map[out_op] = self.op_results_map[out_op]
         return output_op_rslt_map
 
     def eval_op(self, op: Operator) -> None:
@@ -71,6 +73,8 @@ class EvalGraph:
                 self.eval_concat(op)
             case SplitOperator():
                 self.eval_split(op)
+            case InputOperator():
+                self.eval_input(op)
             case _:
                 raise NotImplementedError()
 
