@@ -17,11 +17,13 @@ from collections import deque
 @dataclass
 class ConcatInfo:
     """
+    concat_op:  The concat operator resulting in this concat info.
     concat_dim: When split, split along this dimension.
     split_pos: When generate onnx rules, instantiate this symbolic value to the
       split position represented in the AST of the dimension of tensor.
     Pure value, copyable.
     """
+    cocat_op: Operator
     concat_dim: int
     split_pos: Any  # sympy.Symbol. sympy has limited support for typing
 
@@ -81,6 +83,7 @@ class ConcatInfoInference:
                 visited.add(op)
                 valid = self.infer_one_step(op)
                 if not valid:
+                    # print(f'Infer concat info invalid at op {op}')
                     return False
                 for user in op.get_users():
                     if user not in visited:
@@ -167,7 +170,10 @@ class ConcatInfoInference:
             pos_sp = Symbol(pos_symb, integer=True, positive=True)
             op_dim_lhs = OpDim(lhs, op.axis)
             self.op_dim_pos_symbol_map[op_dim_lhs] = pos_symb
-            this_op_info = ConcatInfo(concat_dim=op.axis, split_pos=pos_sp)
+            this_op_info = ConcatInfo(
+                cocat_op=op,
+                concat_dim=op.axis,
+                split_pos=pos_sp)
             self.op_concat_info_map[op] = [this_op_info]
             return True
         else:
@@ -179,7 +185,10 @@ class ConcatInfoInference:
             pos_sp = Symbol(pos_symb, integer=True, positive=True)
             op_dim_lhs = OpDim(lhs, op.axis)
             self.op_dim_pos_symbol_map[op_dim_lhs] = pos_symb
-            new_info = ConcatInfo(concat_dim=op.axis, split_pos=pos_sp)
+            new_info = ConcatInfo(
+                cocat_op=op,
+                concat_dim=op.axis,
+                split_pos=pos_sp)
             this_op_info = in_info + [new_info]
             self.op_concat_info_map[op] = this_op_info
             return True
@@ -188,6 +197,7 @@ class ConcatInfoInference:
         assert isinstance(op, SplitOperator)
         x, = op.get_inputs()
         x_info = self.op_concat_info_map.get(x)
+        print(f'Split op {op} input concat op {x} info: {x_info}')
         if not x_info:
             # self.op_concat_info_map[op] = None
             # Split must counteract (undo) the effect of a previous concat.

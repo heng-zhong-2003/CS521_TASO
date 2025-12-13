@@ -6,11 +6,24 @@ from onnxscript import ir
 import ast
 from patterns.graph import Graph
 import proj_utils
+from onnx_gen.concat_info_inference import ConcatInfoInference
 
 
 class RuleGen:
     def __init__(self) -> None:
         self.rule_counter = 0
+        self.target_inferrer: ConcatInfoInference
+        self.replacement_inferrer: ConcatInfoInference
+    
+    def plug_in_inferrers(self,
+                          target_inferrer: ConcatInfoInference,
+                          replacement_inferrer: ConcatInfoInference) -> None:
+        """
+        Must call this on the inferrer applied on the same graph patterns
+          before using generate_rule() if the patterns have concat-split.
+        """
+        self.target_inferrer = target_inferrer
+        self.replacement_inferrer = replacement_inferrer
 
     def target_pattern_name(self) -> str:
         return f'taso_target_{self.rule_counter}'
@@ -30,9 +43,14 @@ class RuleGen:
         tpn = self.target_pattern_name()
         rpn = self.replacement_pattern_name()
         ptoe_target = PatternToOnnxExpr()
+
+        ptoe_target.plug_in_inferrer(self.target_inferrer)
+
         target_ast, target_ins = \
             ptoe_target.pattern_to_onnx_pattern(target_pattern)
         ptoe_replacement = PatternToOnnxExpr()
+        
+        ptoe_replacement.plug_in_inferrer(self.replacement_inferrer)
 
         print('Translate replacement pattern')
         replacement_ast, replacement_ins = \
