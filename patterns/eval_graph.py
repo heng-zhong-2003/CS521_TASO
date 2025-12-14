@@ -40,23 +40,18 @@ class EvalGraph:
             its result value np array for other ops
           | (split_0, split_1) for SplitOperator}
         """
-        current_depth = 0
-        visited: set[Operator] = set()
+        evaluated: set[Operator] = set(self.comp_graph.get_inputs())
         queue: deque[Operator] = deque(self.comp_graph.get_inputs())
         while queue:
-            curr_depth_size: int = len(queue)
-            for _ in range(curr_depth_size):
-                op = queue.popleft()
-                if op in visited:
+            op = queue.popleft()
+            self.eval_op(op)
+            for user in op.get_users():
+                if user in evaluated:
                     continue
-                visited.add(op)
-                self.eval_op(op)
-                is_empty = True
-                for user in op.get_users():
-                    is_empty = False
-                    if user not in visited:
-                        queue.append(user)
-            current_depth += 1
+                # ensure every input of the user already has a computed result
+                if all(inp in self.op_results_map for inp in user.get_inputs()):
+                    evaluated.add(user)
+                    queue.append(user)
         graph_outputs = self.comp_graph.get_outputs()
         output_op_rslt_map: dict[Operator, Any] = {}
         for out_op in graph_outputs:
@@ -81,9 +76,7 @@ class EvalGraph:
     def aux_get_result_val(self, op: Operator) -> npt.NDArray[Any]:
         """Get the input values for `op`, handling SplitOperators."""
         if isinstance(op, SplitOperator):
-            return self.op_results_map[op][
-                op.get_user_component(op)
-            ]
+            return self.op_results_map[op][op.get_user_component(op)]
         else:
             return self.op_results_map[op]
     

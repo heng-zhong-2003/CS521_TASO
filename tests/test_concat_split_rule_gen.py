@@ -14,12 +14,13 @@ from onnxscript.rewriter import pattern
 from onnxscript import ir
 import onnxscript
 from onnx_gen.concat_info_inference import ConcatInfoInference
+from patterns.eval_graph import EvalGraph
 
 
 class MatMulPair(nn.Module):
     def forward(self, a, b, c):
         return a @ b, a @ c
-    
+
 
 a = torch.randn(2, 3)
 b = torch.randn(3, 4)
@@ -86,21 +87,15 @@ def taso_target_0(op, in_0, in_1, in_2):
 
 
 def taso_replacement_0(op, in_0, in_1, in_2):
-    return op.Split(
-        op.MatMul(in_0, op.Concat(in_1, in_2, axis=1)),
-        axis=1,
-        splits=[op.Shape(in_1)[1], op.Shape(in_2)[1]])
+    return ((_split_0 := op.Split(op.MatMul(in_0, op.Concat(in_1, in_2, axis=1)), op.Concat(op.Unsqueeze(op.Gather(op.Shape(in_1), op.Constant(value_int=1), axis=0), axes=[0]), op.Unsqueeze(op.Gather(op.Shape(in_2), op.Constant(value_int=1), axis=0), axes=[0]), axis=0), axis=1, num_outputs=2, _outputs=2))[0], _split_0[1])
 
 
 def taso_match_cond_0(ctx, in_0, in_1, in_2):
-    return all([TASO_x is not TASO_y
-                for TASO_x, TASO_y in itertools.combinations(ctx.nodes, 2)])
+    return all([TASO_x is not TASO_y for TASO_x, TASO_y in itertools.combinations(ctx.nodes, 2)])
 
 
 taso_rule_0 = pattern.RewriteRule(
-    taso_target_0,
-    taso_replacement_0,
-    taso_match_cond_0)
+    taso_target_0, taso_replacement_0, taso_match_cond_0)
 # END: Auto generated rules
 
 rm = onnxscript.rewriter.rewrite(
@@ -109,3 +104,19 @@ rm = onnxscript.rewriter.rewrite(
 )
 print("Rewritten ONNX model:")
 print(rm)
+
+eg1 = EvalGraph(
+    g1,
+    [a.numpy(), b.numpy(), c.numpy()],
+    {})
+
+eg2 = EvalGraph(
+    g2,
+    [a.numpy(), b.numpy(), c.numpy()],
+    {spl: b.numpy().shape[1]})
+
+rslt1 = eg1.eval_graph()
+rslt2 = eg2.eval_graph()
+
+print(f'rslt1: {rslt1}')
+print(f'rslt2: {rslt2}')
