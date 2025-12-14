@@ -77,6 +77,7 @@ class PatternToOnnxExpr:
         second_len_ast = self.get_dim_runtime_value_ast(
             undone_concat.get_inputs()[1], split_dim)
         assert isinstance(split_pos_ast, ast.expr)
+        assert isinstance(second_len_ast, ast.expr)
         split_ast = ast.Call(
             func=ast.Attribute(
                 value=ast.Name(id=self.onnx_pattern_op_name, ctx=ast.Load()),
@@ -85,7 +86,7 @@ class PatternToOnnxExpr:
             ),
             args=[inp_onnx],  # type: ignore
             keywords=[
-                ast.keyword(arg='num_outputs', value=ast.Constant(value=2)),
+                ast.keyword(arg='axis', value=ast.Constant(value=split_dim)),
                 ast.keyword(
                     arg='splits',
                     value=ast.List([split_pos_ast, second_len_ast],
@@ -98,7 +99,8 @@ class PatternToOnnxExpr:
         lhs, rhs = gop.get_inputs()
         lhs_onnx = self.op_to_onnx_expr(lhs, user=gop)
         rhs_onnx = self.op_to_onnx_expr(rhs, user=gop)
-        print(f'Inferrer op dim pos map: {self.inferrer.op_dim_pos_symbol_map}')
+        # print(f'Inferrer op dim pos map: '
+        #       f'{self.inferrer.op_dim_pos_symbol_map}')
         this_concat_pos_symbol: str = \
             self.inferrer.op_dim_pos_symbol_map[OpDim(lhs, gop.axis)]
         this_concat_dim = gop.axis

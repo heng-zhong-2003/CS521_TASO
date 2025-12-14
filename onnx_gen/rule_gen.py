@@ -52,7 +52,6 @@ class RuleGen:
         
         ptoe_replacement.plug_in_inferrer(self.replacement_inferrer)
 
-        print('Translate replacement pattern')
         replacement_ast, replacement_ins = \
             ptoe_replacement.pattern_to_onnx_pattern(replacement_pattern)
         # print("Target AST:", ast.dump(target_ast))

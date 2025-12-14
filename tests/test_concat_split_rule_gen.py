@@ -16,6 +16,31 @@ import onnxscript
 from onnx_gen.concat_info_inference import ConcatInfoInference
 
 
+class MatMulPair(nn.Module):
+    def forward(self, a, b, c):
+        return a @ b, a @ c
+    
+
+a = torch.randn(2, 3)
+b = torch.randn(3, 4)
+c = torch.randn(3, 4)
+model = MatMulPair()
+
+torch.onnx.export(
+    model,
+    (a, b, c),
+    "test_multi_root.onnx",
+    opset_version=15,
+    input_names=["a", "b", "c"],
+    output_names=["out1", "out2"],
+    do_constant_folding=False,
+)
+
+onnx_model = onnx.load("test_multi_root.onnx")
+print("Original ONNX model:")
+print(onnx_model)
+
+
 a1 = InputOperator()
 b1 = InputOperator()
 c1 = InputOperator()
@@ -39,14 +64,14 @@ g2.add_operator(spl)
 inferrer1 = ConcatInfoInference(2, g1)
 inferrer2 = ConcatInfoInference(2, g2)
 
-print('Inferring g1:')
+# print('Inferring g1:')
 infer_rslt1 = inferrer1.infer_all()
 assert infer_rslt1
 
-print('Inferring g2:')
+# print('Inferring g2:')
 infer_rslt2 = inferrer2.infer_all()
 assert infer_rslt2
-print(f'Inferrer 2 op concat info map: {inferrer2.op_concat_info_map}')
+# print(f'Inferrer 2 op concat info map: {inferrer2.op_concat_info_map}')
 
 rg = RuleGen()
 rg.plug_in_inferrers(inferrer1, inferrer2)
@@ -57,30 +82,30 @@ print(ast.unparse(rule_ast))
 
 # BEGIN: Auto generated rules
 def taso_target_0(op, in_0, in_1, in_2):
-    return (
-        op.MatMul(in_0, in_1),
-        op.MatMul(in_0, in_2)
-    )
+    return (op.MatMul(in_0, in_1), op.MatMul(in_0, in_2))
 
 
 def taso_replacement_0(op, in_0, in_1, in_2):
     return op.Split(
         op.MatMul(in_0, op.Concat(in_1, in_2, axis=1)),
-        num_outputs=2,
-        splits=[op.Shape(in_1)[1], op.Shape(in_2)[1]]
-    )
+        axis=1,
+        splits=[op.Shape(in_1)[1], op.Shape(in_2)[1]])
 
 
 def taso_match_cond_0(ctx, in_0, in_1, in_2):
-    return all(
-        [TASO_x is not TASO_y
-         for TASO_x, TASO_y in itertools.combinations(ctx.nodes, 2)]
-    )
+    return all([TASO_x is not TASO_y
+                for TASO_x, TASO_y in itertools.combinations(ctx.nodes, 2)])
 
 
 taso_rule_0 = pattern.RewriteRule(
     taso_target_0,
     taso_replacement_0,
-    taso_match_cond_0
-)
+    taso_match_cond_0)
 # END: Auto generated rules
+
+rm = onnxscript.rewriter.rewrite(
+    model=onnx.load("test_multi_root.onnx"),
+    pattern_rewrite_rules=[taso_rule_0],
+)
+print("Rewritten ONNX model:")
+print(rm)
