@@ -3,6 +3,8 @@ from patterns.operator_interface import Operator
 from patterns.operator_add import AddOperator
 from patterns.operator_matmul import MatmulOperator
 from patterns.operator_input import InputOperator
+from patterns.operator_concat import ConcatOperator
+from patterns.operator_split import SplitOperator
 import copy
 # from patterns.evaluate import get_operator_kind
 
@@ -64,10 +66,10 @@ class Graph:
         # Map original -> copied operator
         op_map: dict[Operator, Operator] = {}
 
-        # 1️⃣ Create new Graph with the same input objects (inputs are shared)
+        # Create new Graph with the same input objects (inputs are shared)
         new_graph = Graph(list(self.inputs))
 
-        # 2️⃣ Copy operators in topological order (inputs already first)
+        # Copy operators in topological order (inputs already first)
         for op in self.operators:
             if isinstance(op, InputOperator):
                 op_map[op] = op  # reuse
@@ -76,9 +78,25 @@ class Graph:
             # Remap this operator’s inputs to their copied versions
             copied_inputs = [op_map[i] for i in op.get_inputs()]
             op_class = type(op)
-            new_op = op_class(copied_inputs)
+            # new_op = op_class(copied_inputs)
 
-            new_graph.add_operator(new_op)
-            op_map[op] = new_op
+            # Handle special cases
+            if isinstance(op, SplitOperator):
+                # SplitOperator takes input_op and axis
+                copied_op = SplitOperator(copied_inputs[0], axis=op.axis)
+                # If needed, copy user_component_map
+                copied_op.user_component_map = dict(op.user_component_map)
+
+            elif isinstance(op, ConcatOperator):
+                # ConcatOperator takes lhs, rhs, axis
+                copied_op = ConcatOperator(copied_inputs[0], copied_inputs[1], axis=op.axis)
+
+            else:
+                # Default: assume constructor takes list of inputs
+                copied_op = op_class(copied_inputs)
+
+
+            new_graph.add_operator(copied_op)
+            op_map[op] = copied_op
 
         return new_graph

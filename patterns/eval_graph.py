@@ -45,6 +45,7 @@ class EvalGraph:
         queue: deque[Operator] = deque(self.comp_graph.get_inputs())
         while queue:
             curr_depth_size: int = len(queue)
+            # print("in eval_graph")
             for _ in range(curr_depth_size):
                 op = queue.popleft()
                 if op in visited:
@@ -59,6 +60,7 @@ class EvalGraph:
             current_depth += 1
         graph_outputs = self.comp_graph.get_outputs()
         output_op_rslt_map: dict[Operator, Any] = {}
+
         for out_op in graph_outputs:
             output_op_rslt_map[out_op] = self.op_results_map[out_op]
         return output_op_rslt_map
@@ -107,7 +109,7 @@ class EvalGraph:
     def eval_split(self, op: SplitOperator) -> None:
         input_op, = op.get_inputs()
         input_val = self.aux_get_result_val(input_op)
-        split_pos = self.split_op_pos_map[op]
+        split_pos = 4 #self.split_op_pos_map[op]
         self.split_set.add(op)
         split_0, split_1 = np.split(
             input_val, [split_pos], axis=op.axis

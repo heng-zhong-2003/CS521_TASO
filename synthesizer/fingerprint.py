@@ -27,7 +27,11 @@ class Fingerprint:
     def fingerprint(self,
                     comp_graph: Graph) -> int:
         evaluator = EvalGraph(comp_graph, self.inputs, {} )
+        print("about to eval_graph")
         rslts: dict[Operator, Any] = evaluator.eval_graph()
+        print("rslts keys:", rslts.keys())
+        print("graph operators:", comp_graph.operators)
+
         rslts_list: list[Any] = []
         for out_op, val in rslts.items():
             match val:

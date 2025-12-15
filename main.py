@@ -6,6 +6,8 @@ from synthesizer.fingerprint import Fingerprint
 from synthesizer.validate import RuleValidator
 from synthesizer.build import build  # your Build() implementation
 from codegen.codegen import Codegen
+from patterns.operator_concat import ConcatOperator
+from patterns.operator_split import SplitOperator
 import itertools
 
 
@@ -22,7 +24,7 @@ inputs = [in1, in2]
 graph = Graph(inputs)
 
 # 4️⃣ Define available operator classes
-P = [AddOperator, MatmulOperator]
+P = [AddOperator, MatmulOperator, ConcatOperator, SplitOperator]
 
 # 5️⃣ Build all possible small graphs (threshold controls graph depth)
 build(
@@ -32,19 +34,19 @@ build(
     P=P,
     D=D,
     F=lf,
-    threshold=2,   # keep small for testing
+    threshold=4,   # keep small for testing
 )
 
 generator = Codegen()
 
 file = open('rslt.cpp', 'w')
 
-for fp, graphs in D.items():
-        if len(graphs) > 1:
-            for g1, g2 in itertools.combinations(graphs, 2):
-                if validator.validate(g1, g2):
-                    gen = generator.generate(g1, g2)
-                    print(gen, file=file)
-                print('')
+# for fp, graphs in D.items():
+        # if len(graphs) > 1:
+            # for g1, g2 in itertools.combinations(graphs, 2):
+                # if validator.validate(g1, g2):
+                    # gen = generator.generate(g1, g2)
+                    # print(gen, file=file)
+                # print('')
 
 file.close()

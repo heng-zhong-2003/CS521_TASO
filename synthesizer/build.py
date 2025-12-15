@@ -1,11 +1,13 @@
 import synthesizer.fingerprint
 from patterns.operator_interface import Operator
+from patterns.operator_concat import ConcatOperator
+from patterns.operator_split import SplitOperator
 from patterns.evaluate import get_operator_kind
 import itertools
 from patterns.graph import Graph
 from synthesizer.fingerprint import Fingerprint
 import sys
-import proj_config
+from proj_config import *
 
 ## Implementing the BUILD function to generate random graphs given a list of operators ##
 ## ------------------------------------------------------------------------------------##
@@ -48,17 +50,26 @@ def build(n: int,
         # making sure operators with multiple outputs are enumerated correctly --- once per output instead of just once overall
         # instead of inserting back just the operator, we insert a tuple with the operator and the corresponding output it represents
         # if not a multi-output op, we just replace the existing element with a single-element tuple
-        for index in range(0,len(I)):
-            op = I[index]
-            if isinstance(op, SplitOperator):
-                op = I.pop(index)
-                I.append((op, 0))
-                I.append((op, 1))
-            else:
-                op = I.pop(index)
-                I.append((op))
+        # for index in range(0,len(I)):
+            # op = I[index]
+            # if isinstance(op, SplitOperator):
+                # op = I.pop(index)
+                # I.append((op, 0))
+                # I.append((op, 1))
+            # else:
+                # op = I.pop(index)
+                # I.append((op,))
 
-        for inputs in itertools.permutations(I, arity):
+        new_I = []
+        for op in I:
+            if isinstance(op, SplitOperator):
+                new_I.append((op, 0))
+                new_I.append((op, 1))
+            else:
+                new_I.append((op,))   # wrap *every* operator
+        # I = new_I
+
+        for inputs in itertools.permutations(new_I, arity):
             # returns a list of new operators to add in this position, 
             # where each list element is the same operator with different parameter combinations
             new_op_list = create_new_operator(opClass, arity, inputs)
@@ -112,4 +123,6 @@ def create_new_operator(opClass, arity, inputs):
                 oplist.append(opClass(inputs[0][0], inputs[1][0], axis))
             return oplist
         else:
+            # if (isinstance(inputs[0][0], tuple)):
+                # print("operator is a tuple..?")
             return [opClass(inputs[0][0], inputs[1][0])]
