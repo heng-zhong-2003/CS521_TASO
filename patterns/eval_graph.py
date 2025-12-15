@@ -80,11 +80,11 @@ class EvalGraph:
             case _:
                 raise NotImplementedError()
 
-    def aux_get_result_val(self, op: Operator) -> npt.NDArray[Any]:
+    def aux_get_result_val(self, op: Operator, user: Operator) -> npt.NDArray[Any]:
         """Get the input values for `op`, handling SplitOperators."""
         if isinstance(op, SplitOperator):
             return self.op_results_map[op][
-                op.get_user_component(op)
+                op.get_user_component(user)
             ]
         else:
             return self.op_results_map[op]
@@ -94,21 +94,21 @@ class EvalGraph:
 
     def eval_add(self, op: AddOperator) -> None:
         lhs, rhs = op.get_inputs()
-        lhs_val = self.aux_get_result_val(lhs)
-        rhs_val = self.aux_get_result_val(rhs)
+        lhs_val = self.aux_get_result_val(lhs, op)
+        rhs_val = self.aux_get_result_val(rhs, op)
         this_op_val = lhs_val + rhs_val
         self.op_results_map[op] = this_op_val
 
     def eval_matmul(self, op: MatmulOperator) -> None:
         lhs, rhs = op.get_inputs()
-        lhs_val = self.aux_get_result_val(lhs)
-        rhs_val = self.aux_get_result_val(rhs)
+        lhs_val = self.aux_get_result_val(lhs, op)
+        rhs_val = self.aux_get_result_val(rhs, op)
         this_op_val = np.matmul(lhs_val, rhs_val)
         self.op_results_map[op] = this_op_val
 
     def eval_split(self, op: SplitOperator) -> None:
         input_op, = op.get_inputs()
-        input_val = self.aux_get_result_val(input_op)
+        input_val = self.aux_get_result_val(input_op, op)
         split_pos = 4 #self.split_op_pos_map[op]
         self.split_set.add(op)
         split_0, split_1 = np.split(
@@ -118,7 +118,7 @@ class EvalGraph:
 
     def eval_concat(self, op: ConcatOperator) -> None:
         lhs, rhs = op.get_inputs()
-        lhs_val = self.aux_get_result_val(lhs)
-        rhs_val = self.aux_get_result_val(rhs)
+        lhs_val = self.aux_get_result_val(lhs, op)
+        rhs_val = self.aux_get_result_val(rhs, op)
         this_op_val = np.concatenate([lhs_val, rhs_val], axis=op.axis)
         self.op_results_map[op] = this_op_val
