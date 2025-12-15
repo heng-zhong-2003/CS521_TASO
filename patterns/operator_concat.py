@@ -4,7 +4,7 @@ from patterns.operator_interface import Operator
 
 
 class ConcatOperator(Operator):
-    def __init__(self, lhs: Operator, rhs: Operator, axis: int) -> None:
+    def __init__(self, lhs: Operator | list[Operator], rhs: Operator | None, axis: int) -> None:
         """
         axis: concatenate along the axis `axis`.
         """

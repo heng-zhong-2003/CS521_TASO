@@ -5,6 +5,7 @@ import itertools
 from patterns.graph import Graph
 from synthesizer.fingerprint import Fingerprint
 import sys
+import proj_config
 
 ## Implementing the BUILD function to generate random graphs given a list of operators ##
 ## ------------------------------------------------------------------------------------##
@@ -43,28 +44,72 @@ def build(n: int,
         arity = opClass.get_arity()  # assume each operator class defines this
         # create combinations of arity number of objects at a time from the list I
         print("inside for opclass in P", file=sys.stderr)
+        
+        # making sure operators with multiple outputs are enumerated correctly --- once per output instead of just once overall
+        # instead of inserting back just the operator, we insert a tuple with the operator and the corresponding output it represents
+        # if not a multi-output op, we just replace the existing element with a single-element tuple
+        for index in range(0,len(I)):
+            op = I[index]
+            if isinstance(op, SplitOperator):
+                op = I.pop(index)
+                I.append((op, 0))
+                I.append((op, 1))
+            else:
+                op = I.pop(index)
+                I.append((op))
+
         for inputs in itertools.permutations(I, arity):
+            # returns a list of new operators to add in this position, 
+            # where each list element is the same operator with different parameter combinations
+            new_op_list = create_new_operator(opClass, arity, inputs)
 
-            new_op = opClass(list(inputs))
+            for new_op in new_op_list:
+                # set user map for multi-output operators
+                for op_and_pos in inputs:
+                    if(len(op_and_pos) == 2): # this is a multi-output op
+                       op_and_pos.add_user_component(new_op, op_and_pos[1]) 
 
-            # avoid duplicate computation. This is being done here instead of
-            # in the beginning of the function for efficiency
-            print("checking duplicates", file=sys.stderr)
-            if (G.check_duplicates(new_op)):
-                # if duplicate found, don't use this operator combination
-                continue
+                # avoid duplicate computation. This is being done here instead of
+                # in the beginning of the function for efficiency
+                # TODO This does not consider multi output operators yet
+                print("checking duplicates", file=sys.stderr)
+                if (G.check_duplicates(new_op)):
+                    # if duplicate found, don't use this operator combination
+                    continue
 
-            print("adding new operator", file=sys.stderr)
-            # append to the graph (this automatically updates users list for the inputs)
-            # also update the list of inputs available to further iterations
-            G.add_operator(new_op)
-            I.append(new_op)
+                print("adding new operator", file=sys.stderr)
+                # append to the graph (this automatically updates users list for the inputs)
+                # also update the list of inputs available to further iterations
+                G.add_operator(new_op)
+                I.append(new_op)
 
-            # recurse
-            build(n + 1, G, I, P, D, F, threshold)
+                # recurse
+                build(n + 1, G, I, P, D, F, threshold)
 
-            # backtrack
-            # for _ in new_outputs: I.pop()
-            # G.pop()
-            G.remove_operator(new_op)
-            I.remove(new_op)
+                # backtrack
+                # for _ in new_outputs: I.pop()
+                # G.pop()
+                G.remove_operator(new_op)
+                I.remove(new_op)
+
+
+def create_new_operator(opClass, arity, inputs):
+    # for inputs that represent only a particular output of some operator,
+    # we update the user map for that operator with the appropriate value
+
+    if(arity == 1):
+        if opClass is SplitOperator:
+            # the axis is currently a placeholder. The correct one will be updated
+            # after inference is run on the graph.
+            return [opClass(inputs[0][0], 1)]
+        else:
+            return [opClass(inputs[0][0])]
+
+    elif(arity == 2):
+        if opClass is ConcatOperator:
+            oplist=[] # multiple possible axes
+            for axis in range(0,MAX_AXIS_NUM):
+                oplist.append(opClass(inputs[0][0], inputs[1][0], axis))
+            return oplist
+        else:
+            return [opClass(inputs[0][0], inputs[1][0])]

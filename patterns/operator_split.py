@@ -4,7 +4,7 @@ from patterns.operator_interface import Operator
 
 
 class SplitOperator(Operator):
-    def __init__(self, input_op: Operator, axis: int, splitted_concat: Operator) -> None:
+    def __init__(self, input_op: Operator, axis: int) -> None:
         """
         axis: split along this dimension. This parameter at init is just a
             placeholder for ease in testing.
@@ -14,7 +14,7 @@ class SplitOperator(Operator):
             This is an embedded implementation of the split tree in the paper.
         """
         self.input_op = input_op
-        self.splitted_concat = splitted_concat
+        # self.splitted_concat = splitted_concat
         self.users: list[Operator] = []
         self.axis = axis
         self.input_op.add_users([self])

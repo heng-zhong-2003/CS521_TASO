@@ -25,9 +25,8 @@ class Fingerprint:
         ]
 
     def fingerprint(self,
-                    comp_graph: Graph,
-                    inferer: ConcatInfoInference) -> int:
-        evaluator = EvalGraph(comp_graph, self.inputs, )
+                    comp_graph: Graph) -> int:
+        evaluator = EvalGraph(comp_graph, self.inputs, {} )
         rslts: dict[Operator, Any] = evaluator.eval_graph()
         rslts_list: list[Any] = []
         for out_op, val in rslts.items():
