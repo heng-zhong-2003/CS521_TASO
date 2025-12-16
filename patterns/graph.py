@@ -14,8 +14,13 @@ def get_operator_kind(op: Operator) -> str:
             return 'add'
         case MatmulOperator():
             return 'matmul'
-        case _:
-            return ''
+        case ConcatOperator():
+            return 'concat'
+        case SplitOperator():
+            return 'split'
+        case InputOperator():
+            return 'inputop'
+    return 'nomatch'
 
 class Graph:
     def __init__(self, inputs: list[InputOperator]) -> None:
@@ -41,22 +46,37 @@ class Graph:
             i.add_users([op])
 
     def remove_operator(self, op: Operator):
-        for operator in self.operators:
-            if(operator == op):
-                for i in operator.get_inputs():
-                    i.remove_user(op)
-                self.operators.remove(op)
-                return
+        for i in op.get_inputs():
+            print("     removed as user from an input")
+            i.remove_user(op)
+        self.operators.remove(op)
+        print("operators now has ", len(self.operators), " elements")
+        # for operator in self.operators:
+            # if(operator == op):
+                # print("     inside remove_operator")
+                # for i in op.get_inputs():
+                    # print("     removed as user from an input")
+                    # i.remove_user(op)
+                # self.operators.remove(op)
+                # return
 
     def check_duplicates(self, op:Operator):
         for operator in self.operators:
+            areSame = True
             if(get_operator_kind(operator) == get_operator_kind(op)):
                 # if operator kind matches, match each input
                 inputs1 = list(operator.get_inputs())
                 inputs2 = list(op.get_inputs())
                 for i in range (0, len(inputs1)):
                     if(inputs1[i] != inputs2[i]):
-                        return True # as in, yes there are duplicates
+                        areSame = False # as in, yes there are duplicates
+                    elif(isinstance(inputs1[i], SplitOperator)):
+                        if (inputs1[i].get_user_component(op) != inputs1[i].get_user_component(operator)):
+                            areSame = False
+            else:
+                areSame = False
+            if (areSame):
+                return True
         return False # as in, there are no duplicates
                     
     def copy(self) -> Graph:

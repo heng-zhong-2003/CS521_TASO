@@ -20,7 +20,7 @@ class InputOperator(Operator):
                 self.users.append(usr)
 
     def remove_user(self, op: Operator) -> None:
-        # self.users.remove(op)
+        self.users.remove(op)
         return
 
     def get_arity(cls) -> int:

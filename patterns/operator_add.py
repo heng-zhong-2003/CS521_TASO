@@ -16,8 +16,8 @@ class AddOperator(Operator):
             self.lhs, self.rhs = lhs, rhs
 
         self.users: list[Operator] = []
-        self.lhs.add_users([self])
-        self.rhs.add_users([self])
+        # self.lhs.add_users([self])
+        # self.rhs.add_users([self])
 
     # def __init__(self, lhs: Operator, rhs: Operator) -> None:
         # self.lhs: Operator = lhs

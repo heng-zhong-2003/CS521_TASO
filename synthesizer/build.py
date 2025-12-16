@@ -2,6 +2,8 @@ import synthesizer.fingerprint
 from patterns.operator_interface import Operator
 from patterns.operator_concat import ConcatOperator
 from patterns.operator_split import SplitOperator
+from patterns.operator_add import AddOperator
+from patterns.operator_input import InputOperator
 from patterns.evaluate import get_operator_kind
 import itertools
 from patterns.graph import Graph
@@ -22,12 +24,12 @@ def build(n: int,
           threshold: int):
     # Recursively building a random graph
 
-    print("inside build", file=sys.stderr)
+    print("inside build, n = ",n)
     # Store current graph
     try:
         fp = F.fingerprint(G)
     except Exception as e:
-        print(f"[Fingerprint Error] {type(e).__name__}: {e}", file=sys.stderr)
+        print(f"[Fingerprint Error] {type(e).__name__}: {e}")
         # Skip graphs that can't be evaluated
         return
 
@@ -45,7 +47,7 @@ def build(n: int,
     for opClass in P:
         arity = opClass.get_arity()  # assume each operator class defines this
         # create combinations of arity number of objects at a time from the list I
-        print("inside for opclass in P", file=sys.stderr)
+        # print("inside for opclass in P")
         
         # making sure operators with multiple outputs are enumerated correctly --- once per output instead of just once overall
         # instead of inserting back just the operator, we insert a tuple with the operator and the corresponding output it represents
@@ -61,13 +63,16 @@ def build(n: int,
                 # I.append((op,))
 
         new_I = []
+        print("replacing inputs with tuples")
         for op in I:
+            print("     ", type(op), ", ", end="")
             if isinstance(op, SplitOperator):
                 new_I.append((op, 0))
                 new_I.append((op, 1))
             else:
                 new_I.append((op,))   # wrap *every* operator
         # I = new_I
+        print("")
 
         for inputs in itertools.permutations(new_I, arity):
             # returns a list of new operators to add in this position, 
@@ -78,17 +83,22 @@ def build(n: int,
                 # set user map for multi-output operators
                 for op_and_pos in inputs:
                     if(len(op_and_pos) == 2): # this is a multi-output op
-                       op_and_pos.add_user_component(new_op, op_and_pos[1]) 
+                       op_and_pos[0].add_user_component(new_op, op_and_pos[1]) 
 
                 # avoid duplicate computation. This is being done here instead of
                 # in the beginning of the function for efficiency
                 # TODO This does not consider multi output operators yet
-                print("checking duplicates", file=sys.stderr)
+                print("checking duplicates")
                 if (G.check_duplicates(new_op)):
                     # if duplicate found, don't use this operator combination
                     continue
 
-                print("adding new operator", file=sys.stderr)
+                kind1 = get_operator_kind(new_op)
+                print("adding new ", kind1,  "operator; operand types are: ", end="")
+                for xyz in inputs:
+                    kind2 = type(xyz[0]) #get_operator_kind(xyz[0])
+                    print(kind2,", ", end="")
+                print("\n")
                 # append to the graph (this automatically updates users list for the inputs)
                 # also update the list of inputs available to further iterations
                 G.add_operator(new_op)
@@ -100,8 +110,10 @@ def build(n: int,
                 # backtrack
                 # for _ in new_outputs: I.pop()
                 # G.pop()
+                print("removing operator with id ", id(new_op))
                 G.remove_operator(new_op)
                 I.remove(new_op)
+                print("after removing op, inputs have ", len(inputs[0][0].get_users()), " and ", len(inputs[1][0].get_users()), " users respectively of type ", type(inputs[0][0].get_users()[0]), " and ", type(inputs[1][0].get_users()[0]), " with id ", id(inputs[0][0].get_users()[0]))
 
 
 def create_new_operator(opClass, arity, inputs):

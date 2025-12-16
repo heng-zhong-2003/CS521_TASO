@@ -12,8 +12,8 @@ class ConcatOperator(Operator):
         self.rhs = rhs
         self.axis = axis
         self.users: list[Operator] = []
-        self.lhs.add_users([self])
-        self.rhs.add_users([self])
+        # self.lhs.add_users([self])
+        # self.rhs.add_users([self])
 
     def get_inputs(self) -> list[Operator]:
         return [self.lhs, self.rhs]

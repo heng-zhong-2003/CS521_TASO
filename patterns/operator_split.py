@@ -17,7 +17,7 @@ class SplitOperator(Operator):
         # self.splitted_concat = splitted_concat
         self.users: list[Operator] = []
         self.axis = axis
-        self.input_op.add_users([self])
+        # self.input_op.add_users([self])
         # Map {user_operator -> component}
         # The user is using the 0th or 1st output of split.
         self.user_component_map: dict[Operator, int] = {}
@@ -38,7 +38,11 @@ class SplitOperator(Operator):
 
     def get_user_component(self, user: Operator) -> int:
         """When calling this function, `user` should exist in the map."""
-        return self.user_component_map[user]
+        try:
+            return self.user_component_map[user]
+        except KeyError as e:
+            print(f"❌ KeyError while getting user component")
+            raise
 
     def remove_user(self, op: Operator) -> None:
         self.users.remove(op)

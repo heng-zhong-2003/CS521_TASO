@@ -21,16 +21,18 @@ class Fingerprint:
     def __init__(self) -> None:
         self.inputs: list[npt.NDArray[np.int32]] = [
             np.random.randint(0, 100, size=(2, 4, 4), dtype=np.int32)
-            for _ in range(10)
+            for _ in range(4)
         ]
 
     def fingerprint(self,
                     comp_graph: Graph) -> int:
         evaluator = EvalGraph(comp_graph, self.inputs, {} )
-        print("about to eval_graph")
+        # try:
         rslts: dict[Operator, Any] = evaluator.eval_graph()
-        print("rslts keys:", rslts.keys())
-        print("graph operators:", comp_graph.operators)
+        # except KeyError as e:
+            # print("❌ KeyError inside eval_graph:", e)
+            # raise
+        # print("✅ eval_graph completed, keys:", [type(k).__name__ for k in rslts.keys()])
 
         rslts_list: list[Any] = []
         for out_op, val in rslts.items():

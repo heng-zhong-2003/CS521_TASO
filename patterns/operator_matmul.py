@@ -22,8 +22,8 @@ class MatmulOperator(Operator):
             self.lhs, self.rhs = lhs, rhs
 
         self.users: list[Operator] = []
-        self.lhs.add_users([self])
-        self.rhs.add_users([self])
+        # self.lhs.add_users([self])
+        # self.rhs.add_users([self])
 
     
     def get_inputs(self) -> Iterable[Operator]:
