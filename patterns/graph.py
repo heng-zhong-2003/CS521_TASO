@@ -83,40 +83,87 @@ class Graph:
         """
         Deep-copy the graph structure, but reuse the same InputOperator objects.
         """
-        # Map original -> copied operator
         op_map: dict[Operator, Operator] = {}
 
-        # Create new Graph with the same input objects (inputs are shared)
-        new_graph = Graph(list(self.inputs))
+        # 1️⃣ Copy input operators
+        new_inputs = []
+        for inp in self.inputs:
+            new_inp = InputOperator()           # create a fresh InputOperator
+            new_inp.users = []                  # no users yet
+            op_map[inp] = new_inp
+            new_inputs.append(new_inp)
 
-        # Copy operators in topological order (inputs already first)
-        for op in self.operators:
-            if isinstance(op, InputOperator):
-                op_map[op] = op  # reuse
-                continue
+        new_graph = Graph(new_inputs)
 
-            # Remap this operator’s inputs to their copied versions
-            copied_inputs = [op_map[i] for i in op.get_inputs()]
-            op_class = type(op)
-            # new_op = op_class(copied_inputs)
+        # 2️⃣ Copy remaining operators (topologically ordered)
+        for old_op in self.operators:
+            if isinstance(old_op, InputOperator):
+                continue  # already handled
 
-            # Handle special cases
-            if isinstance(op, SplitOperator):
-                # SplitOperator takes input_op and axis
-                copied_op = SplitOperator(copied_inputs[0], axis=op.axis)
-                # If needed, copy user_component_map
-                copied_op.user_component_map = dict(op.user_component_map)
+            # Remap inputs to their new copies
+            copied_inputs = [op_map[i] for i in old_op.get_inputs()]
 
-            elif isinstance(op, ConcatOperator):
-                # ConcatOperator takes lhs, rhs, axis
-                copied_op = ConcatOperator(copied_inputs[0], copied_inputs[1], axis=op.axis)
+            # Create operator of same type
+            if isinstance(old_op, AddOperator):
+                new_op = AddOperator(copied_inputs[0], copied_inputs[1])
+
+            elif isinstance(old_op, MatmulOperator):
+                new_op = MatmulOperator(copied_inputs[0], copied_inputs[1])
+
+            elif isinstance(old_op, ConcatOperator):
+                new_op = ConcatOperator(copied_inputs[0], copied_inputs[1], axis=old_op.axis)
+
+            elif isinstance(old_op, SplitOperator):
+                new_op = SplitOperator(copied_inputs[0], axis=old_op.axis)
+                new_op.user_component_map = dict(old_op.user_component_map)
 
             else:
-                # Default: assume constructor takes list of inputs
-                copied_op = op_class(copied_inputs)
+                raise TypeError(f"Unknown operator type {type(old_op)} in Graph.copy()")
 
+            new_graph.add_operator(new_op)
+            op_map[old_op] = new_op
 
-            new_graph.add_operator(copied_op)
-            op_map[op] = copied_op
-
+        # 3️⃣ Return the new independent graph
         return new_graph
+
+
+
+
+
+        # Map original -> copied operator
+        # op_map: dict[Operator, Operator] = {}
+
+        # # Create new Graph with the same input objects (inputs are shared)
+        # new_graph = Graph(list(self.inputs))
+
+        # # Copy operators in topological order (inputs already first)
+        # for op in self.operators:
+            # if isinstance(op, InputOperator):
+                # op_map[op] = op  # reuse
+                # continue
+
+            # # Remap this operator’s inputs to their copied versions
+            # copied_inputs = [op_map[i] for i in op.get_inputs()]
+            # op_class = type(op)
+            # # new_op = op_class(copied_inputs)
+
+            # # Handle special cases
+            # if isinstance(op, SplitOperator):
+                # # SplitOperator takes input_op and axis
+                # copied_op = SplitOperator(copied_inputs[0], axis=op.axis)
+                # # If needed, copy user_component_map
+                # copied_op.user_component_map = dict(op.user_component_map)
+
+            # elif isinstance(op, ConcatOperator):
+                # # ConcatOperator takes lhs, rhs, axis
+                # copied_op = ConcatOperator(copied_inputs[0], copied_inputs[1], axis=op.axis)
+
+            # else:
+                # # Default: assume constructor takes list of inputs
+                # copied_op = op_class(copied_inputs)
+
+
+            # new_graph.add_operator(copied_op)
+            # op_map[op] = copied_op
+
+        # return new_graph

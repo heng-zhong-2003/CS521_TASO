@@ -24,7 +24,7 @@ inputs = [in1, in2]
 graph = Graph(inputs)
 
 # 4️⃣ Define available operator classes
-P = [AddOperator]
+P = [AddOperator, MatmulOperator, SplitOperator, ConcatOperator]
 
 # 5️⃣ Build all possible small graphs (threshold controls graph depth)
 build(
@@ -34,7 +34,7 @@ build(
     P=P,
     D=D,
     F=lf,
-    threshold=2,   # keep small for testing
+    threshold=3,   # keep small for testing
 )
 
 generator = Codegen()

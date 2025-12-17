@@ -33,13 +33,18 @@ def build(n: int,
         # Skip graphs that can't be evaluated
         return
 
+
     # store graph in hash table (D)
     if fp not in D:
         D[fp] = []
     D[fp].append(G.copy())   # make sure to store a copy, not reference
 
+    print("     after adding graph to hash table, graph has:")
+    for op in G.operators:
+        print("     ", type(op), " with ", len(op.get_users()), " users")
     # Depth cutoff
     if n >= threshold:
+        print("threshold met")
         return
 
     # Step 2: enumerate operators and their input tensor combinations
@@ -91,10 +96,11 @@ def build(n: int,
                 print("checking duplicates")
                 if (G.check_duplicates(new_op)):
                     # if duplicate found, don't use this operator combination
+                    print("duplicate found")
                     continue
 
                 kind1 = get_operator_kind(new_op)
-                print("adding new ", kind1,  "operator; operand types are: ", end="")
+                print("adding new ", kind1,  "operator with identity ",id(new_op) ,"; operand types are: ", end="")
                 for xyz in inputs:
                     kind2 = type(xyz[0]) #get_operator_kind(xyz[0])
                     print(kind2,", ", end="")
@@ -104,16 +110,18 @@ def build(n: int,
                 G.add_operator(new_op)
                 I.append(new_op)
 
+                # print("before calling build recursively, inputs have ", len(inputs[0][0].get_users()), " and ", len(inputs[1][0].get_users()), " users respectively, with first elements of type ", type(inputs[0][0].get_users()[0]), " and ", type(inputs[1][0].get_users()[0]), " with id ", id(inputs[0][0].get_users()[0]))
                 # recurse
                 build(n + 1, G, I, P, D, F, threshold)
 
+                # print("after calling build recursively, inputs have ", len(inputs[0][0].get_users()), " and ", len(inputs[1][0].get_users()), " users respectively, with first elements of type ", type(inputs[0][0].get_users()[0]), " and ", type(inputs[1][0].get_users()[0]), " with id ", id(inputs[0][0].get_users()[0]))
                 # backtrack
                 # for _ in new_outputs: I.pop()
                 # G.pop()
                 print("removing operator with id ", id(new_op))
                 G.remove_operator(new_op)
                 I.remove(new_op)
-                print("after removing op, inputs have ", len(inputs[0][0].get_users()), " and ", len(inputs[1][0].get_users()), " users respectively of type ", type(inputs[0][0].get_users()[0]), " and ", type(inputs[1][0].get_users()[0]), " with id ", id(inputs[0][0].get_users()[0]))
+                # print("after removing op, inputs have ", len(inputs[0][0].get_users()), " and ", len(inputs[1][0].get_users()), " users respectively of type ", type(inputs[0][0].get_users()[0]), " and ", type(inputs[1][0].get_users()[0]), " with id ", id(inputs[0][0].get_users()[0]))
 
 
 def create_new_operator(opClass, arity, inputs):

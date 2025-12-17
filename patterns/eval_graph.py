@@ -69,6 +69,7 @@ class EvalGraph:
                 if indegree[user] == 0:
                     queue.append(user)
                 print("done adding new user to queue")
+
         graph_outputs = self.comp_graph.get_outputs()
         output_op_rslt_map: dict[Operator, Any] = {}
 
@@ -77,6 +78,9 @@ class EvalGraph:
                 raise RuntimeError(f"Output operator {out_op} was never evaluated.")
             output_op_rslt_map[out_op] = self.op_results_map[out_op]
 
+        print("     done evaluating queue. Graph has:")
+        for op in self.comp_graph.operators:
+            print("     ", type(op), " with ", len(op.get_users()), " users")
         print("returning results from eval")
         return output_op_rslt_map
 

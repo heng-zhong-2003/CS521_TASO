@@ -45,6 +45,7 @@ class Fingerprint:
         if rslts_list[0].dtype != np.int32:
             raise TypeError('Graph evaluation results not np.int32 '
                             'when computing fingerprint.')
+
         return self.hash_tensor_set(rslts_list)
 
     def hash_tensor(self, tensor: npt.NDArray[np.int32]) -> int:
