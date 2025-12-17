@@ -48,7 +48,10 @@ class Graph:
     def remove_operator(self, op: Operator):
         for i in op.get_inputs():
             print("     removed as user from an input")
-            i.remove_user(op)
+            if(op in i.get_users()):
+                # we need to check because in the case where an operators both inputs are the same operator (different outputs of a split),
+                # this code will try to remove it twice from the users list
+                i.remove_user(op)
         self.operators.remove(op)
         print("operators now has ", len(self.operators), " elements")
         # for operator in self.operators:

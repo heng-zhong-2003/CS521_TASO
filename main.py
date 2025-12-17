@@ -34,7 +34,7 @@ build(
     P=P,
     D=D,
     F=lf,
-    threshold=3,   # keep small for testing
+    threshold=5,   # keep small for testing
 )
 
 generator = Codegen()
