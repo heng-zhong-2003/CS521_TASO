@@ -46,3 +46,6 @@ __pycache__/
 **/__pycache__/
 .mypy_cache/
 **/.mypy_cache/
+
+dot_files/
+png_files/
