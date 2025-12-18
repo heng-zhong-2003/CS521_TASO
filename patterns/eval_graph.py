@@ -29,6 +29,7 @@ class EvalGraph:
         # {op -> (split_0, split_1) (two np arrays) for SplitOperator}
         self.op_results_map: dict[Operator, Any] = {}
         input_ops = comp_graph.get_inputs()
+        print("inside eval init. inputs has ", len(inputs), " elements, and graph has ", len(input_ops), " elements")
         for i in range(len(input_ops)):
             self.op_results_map[input_ops[i]] = inputs[i]
         self.split_op_pos_map = split_op_pos_map
@@ -40,6 +41,7 @@ class EvalGraph:
             its result value np array for other ops
           | (split_0, split_1) for SplitOperator}
         """
+        print("starting eval")
         current_depth = 0
         visited: set[Operator] = set()
 

@@ -1,0 +1,10 @@
+digraph G {
+    rankdir=LR;
+    node [shape=box, style=rounded, fontname=Helvetica];
+    n126410886556288 [label="InputOperator\n126410886556288"];
+    n126410886556368 [label="InputOperator\n126410886556368"];
+    n126410886556448 [label="InputOperator\n126410886556448"];
+    n126410886600208 [label="MatmulOperator\n126410886600208"];
+    n126410886540304 [label="SplitOperator\n126410886540304"];
+    n126410886600592 [label="MatmulOperator\n126410886600592"];
+}

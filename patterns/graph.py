@@ -8,6 +8,7 @@ from patterns.operator_split import SplitOperator
 import copy
 # from patterns.evaluate import get_operator_kind
 
+
 def get_operator_kind(op: Operator) -> str:
     match op:
         case AddOperator():

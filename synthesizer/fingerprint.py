@@ -21,7 +21,7 @@ class Fingerprint:
     def __init__(self) -> None:
         self.inputs: list[npt.NDArray[np.int32]] = [
             np.random.randint(0, 100, size=(2, 4, 4), dtype=np.int32)
-            for _ in range(4)
+            for _ in range(3)
         ]
 
     def fingerprint(self,
@@ -57,6 +57,9 @@ class Fingerprint:
 
     def hash_tensor_set(self, tensor_list: list[npt.NDArray[np.int32]]) -> int:
         hashes: list[int] = [self.hash_tensor(t) for t in tensor_list]
-        cnt: Counter[int] = Counter(hashes)
-        fs: frozenset[tuple[int, int]] = frozenset(cnt.items())
-        return hash(fs)
+        h = hashlib.sha256()
+        return hash(tuple(hashes))
+
+        # cnt: Counter[int] = Counter(hashes)
+        # fs: frozenset[tuple[int, int]] = frozenset(cnt.items())
+        # return hash(fs)

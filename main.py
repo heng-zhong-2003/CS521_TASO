@@ -5,48 +5,139 @@ from patterns.graph import Graph
 from synthesizer.fingerprint import Fingerprint
 from synthesizer.validate import RuleValidator
 from synthesizer.build import build  # your Build() implementation
+from synthesizer.build import print_graph
 from codegen.codegen import Codegen
 from patterns.operator_concat import ConcatOperator
 from patterns.operator_split import SplitOperator
 import itertools
-
+import copy
 
 lf = Fingerprint()         # for fingerprinting graphs
 validator = RuleValidator()  # for comparing equivalent graphs
 D = {}                      # fingerprint → list of graphs
 
+A = InputOperator()
+B = InputOperator()
+C = InputOperator()
+inputs=[A, B, C]
+G1 = Graph(inputs)
+op1 = MatmulOperator(A, B)
+op2 = MatmulOperator(A, C)
+G1.add_operator(op1)
+G1.add_operator(op2)
+
+fpTest= lf.fingerprint(G1)
+
+A2 = InputOperator()
+B2 = InputOperator()
+C2 = InputOperator()
+inputs=[A2, B2, C2]
+G2 = Graph(inputs)
+mm1 = MatmulOperator(A2, B2)
+mm2 = MatmulOperator(A2, C2)
+add1 = AddOperator(mm1, mm2)
+G2.add_operator(mm1)
+G2.add_operator(mm2)
+G2.add_operator(add1)
+
+fpTest2 = lf.fingerprint(G2)
+
+
 # 2️⃣ Create initial input operators
 in1 = InputOperator()
 in2 = InputOperator()
-inputs = [in1, in2]
+in3 = InputOperator()
+inputs = [in1, in2, in3]
 
 # 3️⃣ Create an initial graph with inputs
 graph = Graph(inputs)
 
 # 4️⃣ Define available operator classes
-P = [AddOperator, MatmulOperator, SplitOperator, ConcatOperator]
+P = [MatmulOperator, AddOperator]
 
 # 5️⃣ Build all possible small graphs (threshold controls graph depth)
 build(
     n=1,
     G=graph,
-    I=inputs,
+    I=copy.copy(inputs),
     P=P,
     D=D,
     F=lf,
-    threshold=5,   # keep small for testing
+    threshold=4,   # keep small for testing
 )
 
 generator = Codegen()
 
 file = open('rslt.cpp', 'w')
 
-# for fp, graphs in D.items():
-        # if len(graphs) > 1:
+count_f=0
+count_g=0
+for fp, graphs in D.items():
+    if fp == fpTest:
+        for gr in graphs:
+            print_graph(gr, f"/home/bhavya/cosmos/life/UIUC/academics/coursework/CS521/Project/CS521_TASO/dot_files/fp_want", graphNumber=count_g)
+            count_g += 1
+    if fp == fpTest2:
+        for gr in graphs:
+            print_graph(gr, f"/home/bhavya/cosmos/life/UIUC/academics/coursework/CS521/Project/CS521_TASO/dot_files/fp_want2", graphNumber=count_g)
+            count_g += 1
+    # if len(graphs) > 1:
+        # for gr in graphs:
+            # print_graph(gr, f"/home/bhavya/cosmos/life/UIUC/academics/coursework/CS521/Project/CS521_TASO/dot_files/fp_{count_f}", graphNumber=count_g)
+            # count_g += 1
+    count_f+=1
             # for g1, g2 in itertools.combinations(graphs, 2):
                 # if validator.validate(g1, g2):
-                    # gen = generator.generate(g1, g2)
-                    # print(gen, file=file)
-                # print('')
+                    # print_graph(g1, "/home/bhavya/cosmos/life/UIUC/academics/coursework/CS521/Project/CS521_TASO/dot_files", graphNumber=count)
+                    # count += 1
+                    # print_graph(g2, "/home/bhavya/cosmos/life/UIUC/academics/coursework/CS521/Project/CS521_TASO/dot_files", graphNumber=count)
+                    # count += 1
+                    # # gen = generator.generate(g1, g2)
+                    # # print(gen, file=file)
+
+    # print('')
 
 file.close()
+
+
+def test_matmul_split_concat_equivalence():
+    # Create shared fingerprinting context (same random inputs)
+    F = Fingerprint()
+
+    # --- Graph 1: two separate matmuls ---
+    A = InputOperator()
+    B = InputOperator()
+    C = InputOperator()
+    inputs=[A, B, C]
+    G1 = Graph(inputs)
+    op1 = MatmulOperator(A, B)
+    op2 = MatmulOperator(A, C)
+    G1.add_operator(op1)
+    G1.add_operator(op2)
+
+    fp1 = F.fingerprint(G1)
+    print(f"Fingerprint(G1) = {fp1}")
+
+    # --- Graph 2: single matmul with concat and split ---
+    A2 = InputOperator()
+    B2 = InputOperator()
+    C2 = InputOperator()
+    inputs=[A2, B2, C2]
+    G2 = Graph(inputs)
+    concat = ConcatOperator(B2, C2, axis=2)
+    mm = MatmulOperator(A2, concat)
+    split = SplitOperator(mm, axis=2)
+    G2.add_operator(concat)
+    G2.add_operator(mm)
+    G2.add_operator(split)
+
+    fp2 = F.fingerprint(G2)
+    print(f"Fingerprint(G2) = {fp2}")
+
+    # --- Check equivalence ---
+    if fp1 == fp2:
+        print("✅ Fingerprinting detected equivalence.")
+    else:
+        print("❌ Fingerprinting did NOT detect equivalence.")
+
+# test_matmul_split_concat_equivalence()
