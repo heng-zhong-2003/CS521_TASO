@@ -97,5 +97,30 @@ for lhs, rhs in valid_rules:
     rule_strings.append(ast.unparse(rule))
 
 with open("TASO_generated_rules.py", "w") as f:
+    f.write(r'''
+import itertools
+from patterns.operator_input import InputOperator
+from patterns.operator_add import AddOperator
+from patterns.operator_matmul import MatmulOperator
+from patterns.operator_concat import ConcatOperator
+from patterns.operator_split import SplitOperator
+from patterns.graph import Graph
+import ast
+from onnx_gen.rule_gen import RuleGen
+import torch
+import torch.nn as nn
+import onnx
+from onnxscript.rewriter import pattern
+from onnxscript import ir
+import onnxscript
+from onnx_gen.concat_info_inference import ConcatInfoInference
+from patterns.eval_graph import EvalGraph
+
+''')
     for rule_str in rule_strings:
         f.write(rule_str + '\n')
+    rules_lst = '['
+    for i in range(rulegen.rule_counter):
+        rules_lst += f'taso_rule_{i}, '
+    rules_lst += ']'
+    f.write(f'\nrules = {rules_lst}\n')

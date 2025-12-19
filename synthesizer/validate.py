@@ -11,6 +11,7 @@ import numpy as np
 import numpy.typing as npt
 import functools
 import proj_utils
+import time
 
 
 class RuleValidator():
@@ -44,8 +45,17 @@ class RuleValidator():
                                         self.graph_split_inferer_map[rhs])
         lhs_eg = EvalGraph(lhs, inputs, spi_lhs.instantiate())
         rhs_eg = EvalGraph(rhs, inputs, spi_rhs.instantiate())
+        lhs_start = time.perf_counter()
         lhs_rslt = lhs_eg.eval_graph()
+        lhs_end = time.perf_counter()
+        rhs_start = time.perf_counter()
         rhs_rslt = rhs_eg.eval_graph()
+        rhs_end = time.perf_counter()
+
+        lhs_time = lhs_end - lhs_start
+        rhs_time = rhs_end - rhs_start
+        if rhs_time > lhs_time * 1.2:
+            return False
 
         # lhs_rslt = evaluate.evaluate(lhs, inputs)  # type: ignore
         # rhs_rslt = evaluate.evaluate(rhs, inputs)  # type: ignore
