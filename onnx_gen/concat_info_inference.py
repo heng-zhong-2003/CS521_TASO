@@ -6,6 +6,7 @@ from patterns.operator_split import SplitOperator
 from patterns.operator_input import InputOperator
 from patterns.operator_add import AddOperator
 from patterns.operator_matmul import MatmulOperator
+from patterns.operator_conv2d import Conv2DOperator
 from typing import Any
 from dataclasses import dataclass
 import sympy
@@ -134,6 +135,8 @@ class ConcatInfoInference:
         match op:
             case AddOperator():
                 return self.infer_add_one_step(op)
+            case Conv2DOperator():
+                return self.infer_conv2d_one_step(op)
             case MatmulOperator():
                 return self.infer_matmul_one_step(op)
             case SplitOperator():
@@ -146,6 +149,14 @@ class ConcatInfoInference:
                 raise NotImplementedError(
                     f'Concat info inference not implemented for {type(op)}'
                 )
+    
+    def infer_conv2d_one_step(self, op) -> bool:
+        features, weights = op.get_inputs()
+        features_info = self.op_concat_info_map.get(features)
+        weights_info = self.op_concat_info_map.get(weights)
+        if features_info or weights_info:
+            return False
+        return True
 
     def infer_add_one_step(self, op) -> bool:
         inputs = op.get_inputs()

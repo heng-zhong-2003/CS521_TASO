@@ -8,6 +8,7 @@ from patterns.operator_matmul import MatmulOperator
 from patterns.operator_input import InputOperator
 from patterns.operator_split import SplitOperator
 from patterns.operator_concat import ConcatOperator
+from patterns.operator_conv2d import Conv2DOperator
 from onnx_gen.concat_info_inference import (
     ConcatInfo,
     ConcatInfoInference,
@@ -202,6 +203,26 @@ class PatternToOnnxExpr:
             keywords=[],
         )
         return matmul_ast
+    
+    def conv2d_to_onnx_pattern(self, gop: Conv2DOperator) -> ast.Call:
+        features, weights = gop.get_inputs()
+        features_onnx = self.op_to_onnx_expr(features, user=gop)
+        weights_onnx = self.op_to_onnx_expr(weights, user=gop)
+        conv_ast = ast.Call(
+            func=ast.Attribute(
+                value=ast.Name(id=self.onnx_pattern_op_name, ctx=ast.Load()),
+                attr="Conv",
+                ctx=ast.Load(),
+            ),
+            args=[features_onnx, weights_onnx],  # type: ignore[arg-type]
+            keywords=[
+                ast.keyword(
+                    arg="strides",
+                    value=ast.List(elts=[ast.Constant(value=gop.stride),
+                                         ast.Constant(value=gop.stride)],
+                                   ctx=ast.Load()))]
+        )
+        return conv_ast
 
     def input_to_onnx_pattern(self, gop: InputOperator) -> ast.expr:
         if gop in self.input_ops_names_map:
@@ -239,6 +260,8 @@ class PatternToOnnxExpr:
                 outputs = [self.input_to_onnx_pattern(gop)]
             case ConcatOperator():
                 outputs = [self.concat_to_onnx_pattern(gop)]
+            case Conv2DOperator():
+                outputs = [self.conv2d_to_onnx_pattern(gop)]
             case SplitOperator():
                 outputs = self._build_split_outputs(gop)
             case _:
