@@ -54,7 +54,7 @@ class RuleValidator():
 
         lhs_time = lhs_end - lhs_start
         rhs_time = rhs_end - rhs_start
-        if rhs_time > lhs_time * 1.2:
+        if rhs_time > lhs_time * 1.0:
             return False
 
         # lhs_rslt = evaluate.evaluate(lhs, inputs)  # type: ignore
