@@ -124,6 +124,9 @@ class Graph:
                 new_op = SplitOperator(copied_inputs[0], axis=old_op.axis)
                 new_op.user_component_map = dict(old_op.user_component_map)
 
+            elif isinstance(old_op, Conv2DOperator):
+                new_op = Conv2DOperator(copied_inputs[0], copied_inputs[1], stride=old_op.stride)
+
             else:
                 raise TypeError(f"Unknown operator type {type(old_op)} in Graph.copy()")
 

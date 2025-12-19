@@ -102,7 +102,7 @@ class EvalGraph:
                 case InputOperator():
                     self.eval_input(op)
                 case Conv2DOperator():
-                    self.eval_conv2d(op):
+                    self.eval_conv2d(op)
                 case _:
                     raise NotImplementedError()
         except KeyError as e:

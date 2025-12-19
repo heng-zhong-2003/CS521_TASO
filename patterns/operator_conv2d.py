@@ -1,10 +1,10 @@
-rom __future__ import annotations
+from __future__ import annotations
 from typing import Iterable
 from patterns.operator_interface import Operator
 
 
 class Conv2DOperator(Operator):
-    def __init__(self, inputOp: Operator, weightOP: Operator, stride: int = 1) -> None:
+    def __init__(self, inputOp: Operator, weightOp: Operator, stride: int = 1) -> None:
         self.inputOp: Operator = inputOp
         self.weightOp: Operator = weightOp
         self.users: list[Operator] = []

@@ -154,6 +154,7 @@ def create_new_operator(opClass, arity, inputs):
             oplist = []
             for stride in range(1, MAX_STRIDE_NUM):
                 oplist.append(opClass(inputs[0][0], inputs[1][0], stride))
+            return oplist
         else:
             # if (isinstance(inputs[0][0], tuple)):
                 # print("operator is a tuple..?")

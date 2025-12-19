@@ -11,7 +11,7 @@ set -e
     #exit 1
 #f4
 
-input_dir="$(pwd)/fp_want_archive_1"
+input_dir="$(pwd)/dot_files/fp_want2"
 output_dir="$(pwd)/png_files"
 
 # Verify input directory exists
