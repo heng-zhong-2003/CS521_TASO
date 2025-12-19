@@ -21,14 +21,19 @@ class Fingerprint:
     def __init__(self) -> None:
         self.inputs: list[npt.NDArray[np.int32]] = [
             np.random.randint(0, 100, size=(2, 4, 4), dtype=np.int32)
-            for _ in range(10)
+            for _ in range(3)
         ]
 
     def fingerprint(self,
-                    comp_graph: Graph,
-                    inferer: ConcatInfoInference) -> int:
-        evaluator = EvalGraph(comp_graph, self.inputs, )
+                    comp_graph: Graph) -> int:
+        evaluator = EvalGraph(comp_graph, self.inputs, {} )
+        # try:
         rslts: dict[Operator, Any] = evaluator.eval_graph()
+        # except KeyError as e:
+            # print("❌ KeyError inside eval_graph:", e)
+            # raise
+        # print("✅ eval_graph completed, keys:", [type(k).__name__ for k in rslts.keys()])
+
         rslts_list: list[Any] = []
         for out_op, val in rslts.items():
             match val:
@@ -40,6 +45,7 @@ class Fingerprint:
         if rslts_list[0].dtype != np.int32:
             raise TypeError('Graph evaluation results not np.int32 '
                             'when computing fingerprint.')
+
         return self.hash_tensor_set(rslts_list)
 
     def hash_tensor(self, tensor: npt.NDArray[np.int32]) -> int:
@@ -51,6 +57,9 @@ class Fingerprint:
 
     def hash_tensor_set(self, tensor_list: list[npt.NDArray[np.int32]]) -> int:
         hashes: list[int] = [self.hash_tensor(t) for t in tensor_list]
-        cnt: Counter[int] = Counter(hashes)
-        fs: frozenset[tuple[int, int]] = frozenset(cnt.items())
-        return hash(fs)
+        h = hashlib.sha256()
+        return hash(tuple(hashes))
+
+        # cnt: Counter[int] = Counter(hashes)
+        # fs: frozenset[tuple[int, int]] = frozenset(cnt.items())
+        # return hash(fs)
