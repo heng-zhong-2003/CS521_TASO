@@ -16,6 +16,14 @@ def get_operator_kind(op: Operator) -> str:
             return 'add'
         case MatmulOperator():
             return 'matmul'
+        case ConcatOperator():
+            return 'concat'
+        case SplitOperator():
+            return 'split'
+        case Conv2DOperator():
+            return 'conv2d'
+        case InputOperator():
+            return 'inputop'
         case _:
             return ''
 

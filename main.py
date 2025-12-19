@@ -53,7 +53,7 @@ inputs = [in1, in2, in3]
 graph = Graph(inputs)
 
 # 4️⃣ Define available operator classes
-P = [MatmulOperator, AddOperator]
+P = [MatmulOperator, Conv2DOperator]
 
 # 5️⃣ Build all possible small graphs (threshold controls graph depth)
 build(

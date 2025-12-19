@@ -5,6 +5,7 @@ from patterns.operator_matmul import MatmulOperator
 from patterns.operator_input import InputOperator
 from patterns.operator_concat import ConcatOperator
 from patterns.operator_split import SplitOperator
+from patterns.operator_conv2d import Conv2DOperator
 import copy
 # from patterns.evaluate import get_operator_kind
 
@@ -19,6 +20,8 @@ def get_operator_kind(op: Operator) -> str:
             return 'concat'
         case SplitOperator():
             return 'split'
+        case Conv2DOperator():
+            return 'conv2d'
         case InputOperator():
             return 'inputop'
     return 'nomatch'

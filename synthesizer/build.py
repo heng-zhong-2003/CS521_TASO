@@ -5,6 +5,7 @@ from patterns.operator_split import SplitOperator
 from patterns.operator_add import AddOperator
 from patterns.operator_input import InputOperator
 from patterns.evaluate import get_operator_kind
+from patterns.operator_conv2d import Conv2DOperator
 import itertools
 from patterns.graph import Graph
 from synthesizer.fingerprint import Fingerprint
@@ -149,6 +150,10 @@ def create_new_operator(opClass, arity, inputs):
             for axis in range(2,MAX_AXIS_NUM):
                 oplist.append(opClass(inputs[0][0], inputs[1][0], axis))
             return oplist
+        elif opClass is Conv2DOperator:
+            oplist = []
+            for stride in range(1, MAX_STRIDE_NUM):
+                oplist.append(opClass(inputs[0][0], inputs[1][0], stride))
         else:
             # if (isinstance(inputs[0][0], tuple)):
                 # print("operator is a tuple..?")
