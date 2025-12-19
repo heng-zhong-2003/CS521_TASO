@@ -229,4 +229,5 @@ class ConcatInfoInference:
         else:
             self.op_concat_info_map[op] = x_info[:-1]
             op.axis = x_info[-1].concat_dim
+            op.splitted_concat = x_info[-1].cocat_op
             return True

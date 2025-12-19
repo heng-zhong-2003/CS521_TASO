@@ -1,7 +1,12 @@
 from __future__ import annotations
+from onnx_gen.concat_info_inference import ConcatInfoInference
 from patterns import evaluate
 from patterns.graph import Graph
 from patterns.operator_input import InputOperator
+from patterns.eval_graph import EvalGraph
+from patterns.operator_interface import Operator
+from patterns.split_pos_instantiate import SplitPosInstantiation
+from patterns import shape_infer
 import numpy as np
 import numpy.typing as npt
 import functools
@@ -13,8 +18,12 @@ class RuleValidator():
     When program starts, create one object of this class and use consistently
     """
 
-    def __init__(self, eq_threshold: float = 1.0e-4) -> None:
+    def __init__(
+            self,
+            graph_split_inferer_map: dict[Graph, ConcatInfoInference],
+            eq_threshold: float = 1.0e-4) -> None:
         self.eq_threshold: float = eq_threshold
+        self.graph_split_inferer_map = graph_split_inferer_map
         self.zeros: npt.NDArray[np.float64] = np.zeros(
             (2, 4, 4), dtype=np.float64)
         self.rand_inputs: list[npt.NDArray[np.float64]] = [
@@ -25,8 +34,21 @@ class RuleValidator():
             (2, 4, 4), dtype=np.float64)
 
     def eval_eq(self, lhs: Graph, rhs: Graph, inputs: list[npt.NDArray[np.float64]]) -> bool:
-        lhs_rslt = evaluate.evaluate(lhs, inputs)  # type: ignore
-        rhs_rslt = evaluate.evaluate(rhs, inputs)  # type: ignore
+        input_shapes = [(2, 4, 4) for _ in inputs]
+        input_shapes = tuple(input_shapes)
+        shape_map_lhs = shape_infer.traverse(lhs, input_shapes)
+        shape_map_rhs = shape_infer.traverse(rhs, input_shapes)
+        spi_lhs = SplitPosInstantiation(lhs, shape_map_lhs,
+                                        self.graph_split_inferer_map[lhs])
+        spi_rhs = SplitPosInstantiation(rhs, shape_map_rhs,
+                                        self.graph_split_inferer_map[rhs])
+        lhs_eg = EvalGraph(lhs, inputs, spi_lhs.instantiate())
+        rhs_eg = EvalGraph(rhs, inputs, spi_rhs.instantiate())
+        lhs_rslt = lhs_eg.eval_graph()
+        rhs_rslt = rhs_eg.eval_graph()
+
+        # lhs_rslt = evaluate.evaluate(lhs, inputs)  # type: ignore
+        # rhs_rslt = evaluate.evaluate(rhs, inputs)  # type: ignore
 
         # lhs_rslt_vals = sorted(list(lhs_rslt.values()))
         # rhs_rslt_vals = sorted(list(rhs_rslt.values()))

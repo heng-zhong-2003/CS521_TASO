@@ -14,7 +14,7 @@ class SplitOperator(Operator):
             This is an embedded implementation of the split tree in the paper.
         """
         self.input_op = input_op
-        # self.splitted_concat = splitted_concat
+        self.splitted_concat: Operator | None = None
         self.users: list[Operator] = []
         self.axis = axis
         # self.input_op.add_users([self])
