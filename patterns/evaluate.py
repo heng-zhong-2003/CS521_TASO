@@ -4,6 +4,10 @@ from patterns.graph import Graph
 from patterns.operator_interface import Operator
 from patterns.operator_add import AddOperator
 from patterns.operator_matmul import MatmulOperator
+from patterns.operator_split import SplitOperator
+from patterns.operator_concat import ConcatOperator
+from patterns.operator_conv2d import Conv2DOperator
+from patterns.operator_input import InputOperator
 import proj_utils
 from collections import deque
 import numpy as np
@@ -16,6 +20,14 @@ def get_operator_kind(op: Operator) -> str:
             return 'add'
         case MatmulOperator():
             return 'matmul'
+        case ConcatOperator():
+            return 'concat'
+        case SplitOperator():
+            return 'split'
+        case Conv2DOperator():
+            return 'conv2d'
+        case InputOperator():
+            return 'inputop'
         case _:
             return ''
 

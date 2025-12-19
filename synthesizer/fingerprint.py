@@ -5,6 +5,7 @@ from patterns.graph import Graph
 from patterns.operator_interface import Operator
 from onnx_gen.concat_info_inference import ConcatInfoInference
 from patterns.operator_split import SplitOperator
+from patterns.operator_conv2d import Conv2DOperator
 import proj_utils
 from collections import Counter
 import hashlib

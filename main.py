@@ -8,6 +8,7 @@ from synthesizer.build import build  # your Build() implementation
 from synthesizer.build import print_graph
 from codegen.codegen import Codegen
 from patterns.operator_concat import ConcatOperator
+from patterns.operator_conv2d import Conv2DOperator
 from patterns.operator_split import SplitOperator
 import itertools
 import copy
@@ -42,6 +43,20 @@ G2.add_operator(add1)
 
 fpTest2 = lf.fingerprint(G2)
 
+A3 = InputOperator()
+B3 = InputOperator()
+C3 = InputOperator()
+inputs=[A3, B3, C3]
+G3 = Graph(inputs)
+conv1 = Conv2DOperator(A3, C3, stride=1)
+conv2 = Conv2DOperator(B3, C3, stride=1)
+add1 = AddOperator(conv1, conv2)
+G3.add_operator(conv1)
+G3.add_operator(conv2)
+G3.add_operator(add1)
+
+fpTest3 = lf.fingerprint(G3)
+
 
 # 2️⃣ Create initial input operators
 in1 = InputOperator()
@@ -53,7 +68,7 @@ inputs = [in1, in2, in3]
 graph = Graph(inputs)
 
 # 4️⃣ Define available operator classes
-P = [MatmulOperator, AddOperator]
+P = [AddOperator, MatmulOperator]
 
 # 5️⃣ Build all possible small graphs (threshold controls graph depth)
 build(
@@ -80,6 +95,11 @@ for fp, graphs in D.items():
     if fp == fpTest2:
         for gr in graphs:
             print_graph(gr, f"/home/bhavya/cosmos/life/UIUC/academics/coursework/CS521/Project/CS521_TASO/dot_files/fp_want2", graphNumber=count_g)
+            count_g += 1
+    if fp == fpTest3:
+        print("MATCHED")
+        for gr in graphs:
+            print_graph(gr, f"/home/bhavya/cosmos/life/UIUC/academics/coursework/CS521/Project/CS521_TASO/dot_files/fp_want3", graphNumber=count_g)
             count_g += 1
     # if len(graphs) > 1:
         # for gr in graphs:
@@ -141,3 +161,44 @@ def test_matmul_split_concat_equivalence():
         print("❌ Fingerprinting did NOT detect equivalence.")
 
 # test_matmul_split_concat_equivalence()
+
+def test_conv():
+    F = Fingerprint()
+
+    A3 = InputOperator()
+    B3 = InputOperator()
+    C3 = InputOperator()
+    inputs=[A3, B3, C3]
+    G3 = Graph(inputs)
+    conv1 = Conv2DOperator(A3, C3, stride=1)
+    conv2 = Conv2DOperator(B3, C3, stride=1)
+    add1 = AddOperator(conv1, conv2)
+    G3.add_operator(conv1)
+    G3.add_operator(conv2)
+    G3.add_operator(add1)
+
+    fp1 = F.fingerprint(G3)
+    print(f"Fingerprint(G3) = {fp1}")
+
+
+    A4 = InputOperator()
+    B4 = InputOperator()
+    C4 = InputOperator()
+    inputs=[A4, B4, C4]
+    G4 = Graph(inputs)
+    add1 = AddOperator(A4, B4)
+    conv1 = Conv2DOperator(add1, C4, stride=1)
+    G4.add_operator(add1)
+    G4.add_operator(conv1)
+
+    fp2 = F.fingerprint(G4)
+    print(f"Fingerprint(G4) = {fp2}")
+
+    if fp1 == fp2:
+        print("✅ Fingerprinting detected equivalence.")
+    else:
+        print("❌ Fingerprinting did NOT detect equivalence.")
+
+
+
+test_conv()

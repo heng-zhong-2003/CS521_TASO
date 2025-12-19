@@ -5,6 +5,7 @@ from patterns.operator_matmul import MatmulOperator
 from patterns.operator_input import InputOperator
 from patterns.operator_concat import ConcatOperator
 from patterns.operator_split import SplitOperator
+from patterns.operator_conv2d import Conv2DOperator
 import copy
 # from patterns.evaluate import get_operator_kind
 
@@ -19,6 +20,8 @@ def get_operator_kind(op: Operator) -> str:
             return 'concat'
         case SplitOperator():
             return 'split'
+        case Conv2DOperator():
+            return 'conv2d'
         case InputOperator():
             return 'inputop'
     return 'nomatch'
@@ -120,6 +123,9 @@ class Graph:
             elif isinstance(old_op, SplitOperator):
                 new_op = SplitOperator(copied_inputs[0], axis=old_op.axis)
                 new_op.user_component_map = dict(old_op.user_component_map)
+
+            elif isinstance(old_op, Conv2DOperator):
+                new_op = Conv2DOperator(copied_inputs[0], copied_inputs[1], stride=old_op.stride)
 
             else:
                 raise TypeError(f"Unknown operator type {type(old_op)} in Graph.copy()")

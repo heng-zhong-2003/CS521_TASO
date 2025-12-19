@@ -7,6 +7,7 @@ from patterns.operator_matmul import MatmulOperator
 from patterns.operator_concat import ConcatOperator
 from patterns.operator_split import SplitOperator
 from patterns.operator_input import InputOperator
+from patterns.operator_conv2d import Conv2DOperator
 import proj_utils
 from collections import deque
 import numpy as np
@@ -100,6 +101,8 @@ class EvalGraph:
                     self.eval_split(op)
                 case InputOperator():
                     self.eval_input(op)
+                case Conv2DOperator():
+                    self.eval_conv2d(op)
                 case _:
                     raise NotImplementedError()
         except KeyError as e:
@@ -161,3 +164,47 @@ class EvalGraph:
         this_op_val = np.concatenate([lhs_val, rhs_val], axis=op.axis)
         self.op_results_map[op] = this_op_val
         print("end concat eval")
+
+    def eval_conv2d(self, op: Conv2DOperator) -> None:
+        input_op, weight_op = op.get_inputs()
+        inp_val = self.aux_get_result_val(input_op, op)
+        w_val = self.aux_get_result_val(weight_op, op)
+
+        ## make sure the shapes are appropriate for both
+
+        if inp_val.ndim == 3:
+            inp_val = inp_val[:, np.newaxis, :, :]   # shape becomes (1, C, H, W)
+        elif inp_val.ndim == 2:
+            inp_val = inp_val[np.newaxis, np.newaxis, ...] # shape becomes (1, 1, H, W)
+
+        # If weight has no input-channel dimension, assume it’s single-channel
+        if w_val.ndim == 2: # [KH, KW]
+            w_val = w_val[np.newaxis, np.newaxis, :, :]  # [1, 1, KH, KW]
+        elif w_val.ndim == 3:   # [C_out, KH, KW]
+            w_val = w_val[:, np.newaxis, :, :]           # [C_out, 1, KH, KW]
+        elif w_val.ndim != 4:
+            raise ValueError(f"Unexpected weight shape for Conv2D: {w_val.shape}")
+
+        # Assuming shapes: input [N, C_in, H, W], weight [C_out, C_in, KH, KW]
+        stride = op.stride
+
+        B, C_in, H, W = inp_val.shape
+        C_out, Cw, KH, KW = w_val.shape
+        assert C_in == Cw, f"Conv2D channel mismatch: input {C_in}, weight {Cw}"
+
+        H_out = (H - KH) // stride + 1
+        W_out = (W - KW) // stride + 1
+        out = np.zeros((B, C_out, H_out, W_out), dtype=inp_val.dtype)
+
+        # --- Convolution ---
+        for b in range(B):
+            for co in range(C_out):
+                for h in range(0, H - KH + 1, stride):
+                    for w in range(0, W - KW + 1, stride):
+                        patch = inp_val[b, :, h:h+KH, w:w+KW]  # shape [C_in, KH, KW]
+                        out[b, co, h // stride, w // stride] = np.sum(patch * w_val[co])
+
+        if out.shape[1] == 1:
+            out = out.reshape(out.shape[0], out.shape[2], out.shape[3])
+
+        self.op_results_map[op] = out
