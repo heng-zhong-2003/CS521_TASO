@@ -11,8 +11,8 @@ set -e
     #exit 1
 #f4
 
-input_dir="/home/bhavya/cosmos/life/UIUC/academics/coursework/CS521/Project/CS521_TASO/dot_files/fp_want2"
-output_dir="/home/bhavya/cosmos/life/UIUC/academics/coursework/CS521/Project/CS521_TASO/png_files"
+input_dir="$(pwd)/fp_want_archive_1"
+output_dir="$(pwd)/png_files"
 
 # Verify input directory exists
 if [ ! -d "$input_dir" ]; then
