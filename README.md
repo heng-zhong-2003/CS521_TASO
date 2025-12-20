@@ -13,6 +13,12 @@ First, ensure a Python of version 3.12. Then, run the following command to insta
 pip install -r requirements.txt
 ```
 
+To generate rewrite rules, use the following command:
+
+```
+python generate_rules.py
+```
+
 To run the experiment, `cd` to the root directory of this project and run
 
 ```
