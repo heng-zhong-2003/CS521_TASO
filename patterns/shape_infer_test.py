@@ -9,21 +9,8 @@ from patterns.operator_concat import ConcatOperator
 from patterns.operator_split import SplitOperator
 import shape_infer
 
-# 检查代码逻辑上有没有问题。处理split & 运用split。给SplitOperator的input_op、splitted_concat赋值了所以看起来能跑。
-# 可删。
-def _build_toy_graph() -> tuple[Graph, tuple[tuple[int, ...], ...], list[Operator]]:
-    """
-    构造一个包含 Split 的计算图：
-        in0 (2,3)  ---\
-                       Concat c1 (axis=1, shape=(2,8)) ---> Split s1 (axis=1)
-        in1 (2,5)  ---/                                       |
-                                                              ├---> component 0: (2,3)
-                                                              └---> component 1: (2,5)
 
-    期望：
-        c1.shape = (2, 8)
-        s1.shape = ((2, 3), (2, 5))  # 两个输出
-    """
+def _build_toy_graph() -> tuple[Graph, tuple[tuple[int, ...], ...], list[Operator]]:
     in0 = InputOperator()
     in1 = InputOperator()
     graph = Graph(inputs=[in0, in1])
@@ -40,22 +27,6 @@ def _build_toy_graph() -> tuple[Graph, tuple[tuple[int, ...], ...], list[Operato
     return graph, input_shapes, all_ops
 
 def _build_split_with_users_graph() -> tuple[Graph, tuple[tuple[int, ...], ...], list[Operator]]:
-    """
-    构造一个 Split 输出被使用的图：
-        in0 (2,3)  ---\
-                       Concat c1 (axis=1, shape=(2,8)) ---> Split s1 (axis=1)
-        in1 (2,5)  ---/                                       |
-                                                              ├---> a1 (用 component 0)
-                                                              └---> a2 (用 component 1)
-        in2 (2,3)  ------------------------------------------------^
-
-        in3 (2,5)  ------------------------------------------------^
-
-    期望：
-        s1.shape = ((2, 3), (2, 5))
-        a1.shape = (2, 3)  # s1[0] + in2
-        a2.shape = (2, 5)  # s1[1] + in3
-    """
     in0 = InputOperator()
     in1 = InputOperator()
     in2 = InputOperator()
