@@ -30,7 +30,7 @@ for num_inputs in range(3, 4):
     for _ in range(num_inputs):
         I.append(InputOperator())
     init_graph = Graph(I)
-    build.build_hardcoded(
+    build.build(
         n=1,
         G=init_graph,
         I=copy.copy(I),
