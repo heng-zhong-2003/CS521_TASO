@@ -131,6 +131,58 @@ def build(n: int,
                 I.remove(new_op)
                 # print("after removing op, inputs have ", len(inputs[0][0].get_users()), " and ", len(inputs[1][0].get_users()), " users respectively of type ", type(inputs[0][0].get_users()[0]), " and ", type(inputs[1][0].get_users()[0]), " with id ", id(inputs[0][0].get_users()[0]))
 
+def build_hardcoded(n: int,
+          G: Graph,
+          I: list[Operator],
+          P: list[type[Operator]],
+          D: dict[int, list[Graph]],
+          F: Fingerprint,
+          threshold: int):
+    # Recursively building a random graph
+
+    # Store current graph
+    try:
+        A3 = InputOperator()
+        B3 = InputOperator()
+        C3 = InputOperator()
+        inputs=[A3, B3, C3]
+        G3 = Graph(inputs)
+        conv1 = Conv2DOperator(A3, C3, stride=1)
+        conv2 = Conv2DOperator(B3, C3, stride=1)
+        add1 = AddOperator(conv1, conv2)
+        G3.add_operator(conv1)
+        G3.add_operator(conv2)
+        G3.add_operator(add1)
+
+        fpTest3 = F.fingerprint(G3)
+
+        A4 = InputOperator()
+        B4 = InputOperator()
+        C4 = InputOperator()
+        inputs=[A4, B4, C4]
+        G4 = Graph(inputs)
+        add1 = AddOperator(A4, B4)
+        conv1 = Conv2DOperator(add1, C4, stride=1)
+        G4.add_operator(add1)
+        G4.add_operator(conv1)
+
+        fpTest4 = F.fingerprint(G4)
+    except Exception as e:
+        # Skip graphs that can't be evaluated
+        return
+
+
+    # print_graph(G, "/home/bhavya/cosmos/life/UIUC/academics/coursework/CS521/Project/CS521_TASO/dot_files", graphNumber=fp)
+
+    # store graph in hash table (D)
+    if fpTest3 not in D:
+        D[fpTest3] = []
+    D[fpTest3].append(G3.copy())   # make sure to store a copy, not reference
+
+    if fpTest4 not in D:
+        D[fpTest4] = []
+    D[fpTest4].append(G4.copy())   # make sure to store a copy, not reference
+
 
 def create_new_operator(opClass, arity, inputs):
     # for inputs that represent only a particular output of some operator,

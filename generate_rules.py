@@ -1,6 +1,7 @@
 from patterns.operator_input import InputOperator
 from patterns.operator_add import AddOperator
 from patterns.operator_matmul import MatmulOperator
+from patterns.operator_conv2d import Conv2DOperator
 from patterns.graph import Graph
 from synthesizer.fingerprint import Fingerprint
 from synthesizer.validate import RuleValidator
@@ -13,6 +14,7 @@ from onnx_gen.concat_info_inference import ConcatInfoInference
 import ast
 from typing import Type
 import copy
+import traceback
 
 
 fingerprinter = Fingerprint()
@@ -20,15 +22,15 @@ fingerprinter = Fingerprint()
 num_inputs_D_map: dict[int, dict[int, list[Graph]]] = {}
 graph_split_inferer_map: dict[Graph, ConcatInfoInference] = {}
 P: list[Type[Operator]] = [
-    MatmulOperator, AddOperator, ConcatOperator, SplitOperator]
+    AddOperator, Conv2DOperator]
 
-for num_inputs in range(1, 3):
+for num_inputs in range(3, 4):
     I = []
     D: dict[int, list[Graph]] = {} # fingerprint -> list of graphs
     for _ in range(num_inputs):
         I.append(InputOperator())
     init_graph = Graph(I)
-    build.build(
+    build.build_hardcoded(
         n=1,
         G=init_graph,
         I=copy.copy(I),
@@ -72,7 +74,8 @@ def validate_rules(fp_graph_map: dict[int, list[Graph]]) -> \
                     if validator.validate(g1, g2):
                         ret.append((g1, g2))
                 except Exception as e:
-                    pass
+                    print("exception while validation")
+                    traceback.print_exc()
     return ret
 
 
@@ -104,6 +107,7 @@ from patterns.operator_add import AddOperator
 from patterns.operator_matmul import MatmulOperator
 from patterns.operator_concat import ConcatOperator
 from patterns.operator_split import SplitOperator
+from patterns.operator_conv2d import Conv2DOperator
 from patterns.graph import Graph
 import ast
 from onnx_gen.rule_gen import RuleGen
