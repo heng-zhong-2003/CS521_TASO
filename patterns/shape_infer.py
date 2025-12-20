@@ -7,6 +7,7 @@ from patterns.operator_add import AddOperator
 from patterns.operator_matmul import MatmulOperator
 from patterns.operator_concat import ConcatOperator
 from patterns.operator_split import SplitOperator
+from patterns.operator_conv2d import Conv2DOperator
 import proj_utils
 from collections import deque
 import numpy as np
@@ -23,6 +24,8 @@ def get_operator_kind(op: Operator) -> str:
             return 'concat'
         case SplitOperator():
             return 'split'
+        case Conv2DOperator():
+            return 'conv2d'
         case _:
             return ''
 
@@ -68,6 +71,11 @@ def infer_split(op, parent_shapes, shape_map: dict[Operator, tuple[int, ...]]) \
     rhs_shape = shape_map[concat_op.rhs]
     return (lhs_shape, rhs_shape)
 
+def infer_conv2d(op, parent_shapes, shape_map: dict[Operator, tuple[int, ...]]):
+    input_shape, weight_shape = parent_shapes
+    # Very simplified Conv2D shape inference: assumes stride=1, padding=0, dilation=1
+    return (2, input_shape[1] - weight_shape[1] + 1, input_shape[2] - weight_shape[2] + 1)
+
 shape_inference_map: \
     dict[str, Callable[[Operator, list[tuple[int, ...]], dict[Operator, tuple[int, ...]]],
                 tuple[int, ...]]] = {
@@ -75,6 +83,7 @@ shape_inference_map: \
         'matmul': infer_matmul,
         'concat': infer_concat,
         'split': infer_split,
+        'conv2d': infer_conv2d,
     }
 
 def traverse(comp_graph: Graph,
